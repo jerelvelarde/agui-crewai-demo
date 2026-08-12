@@ -1,0 +1,109 @@
+# Cadence — CopilotKit × CrewAI
+
+A competitive-intelligence brief workspace built on [`ag-ui-crewai` 0.3.0](https://pypi.org/project/ag-ui-crewai/).
+
+Ask for a brief on a competitor. A three-agent CrewAI crew researches it, an
+analyst scores it, **the run pauses for your approval**, then a writer fills the
+brief in section by section — all streaming over AG-UI into a CopilotKit UI.
+
+The point of the demo is that none of those capabilities are bolted on to show
+them off. Each one is there because the product needs it, and each happens to be
+one of the things 0.3.0 added.
+
+## Run it
+
+```bash
+make install
+cp agent/.env.example agent/.env   # add your OPENAI_API_KEY
+make dev                           # agent :8000, web :3000
+```
+
+Then ask: **“brief me on Pulsegrid's pricing vs ours”**.
+
+## What it demonstrates
+
+| Beat in the demo | Capability | Where |
+|---|---|---|
+| Model thinks before acting | reasoning stream | `flow.py::intake` |
+| Competitor name appears before the call finishes | predictive state | `copilotkit_predict_state` |
+| Researcher → Analyst → Writer, each attributed | crew-inside-flow attribution | `crew.py` |
+| Corpus tools run server-side, results render | backend tool rendering | `tools.py` |
+| Scorecard as a rich component | generative UI / A2UI | `flow.py::present` |
+| Run genuinely pauses, then resumes | interrupt / resume | `flow.py::approve_outline` |
+| Brief fills in section by section | shared-state streaming | `flow.py::_write_sections` |
+| Per-turn routed Q&A | Conversational Flows | `conversational.py` |
+
+Two endpoints, on purpose:
+
+- `/brief` — the pipeline above, a regular Flow.
+- `/concierge` — CrewAI **Conversational Flows**. Opting a flow into
+  `conversational = True` installs CrewAI's own conversational graph in place of
+  a hand-authored one, so it cannot host the brief pipeline. It gets its own
+  endpoint where it is the actual subject rather than a flag on something else.
+
+## Evidence, not assertions
+
+```bash
+make verify
+```
+
+Drives a full brief and asserts the AG-UI stream really carries each capability —
+reasoning events, `TOOL_CALL_RESULT`, repeated `STATE_SNAPSHOT`, a resumable
+interrupt on `RUN_FINISHED.outcome`, and a successful resume. Prints a checklist
+and writes the raw stream to `docs/evidence/`.
+
+```bash
+make capabilities   # what this install says it supports
+```
+
+## Offline by design
+
+`agent/corpus/` holds committed competitor data — pricing pages, docs, reviews,
+changelogs — and every tool reads only from there. No network research, so runs
+are byte-identical and recordings are repeatable. `OPENAI_API_KEY` is the only
+secret.
+
+Competitors are fictional: **Beacon Analytics** (enterprise-first),
+**Pulsegrid** (bottom-up, free tier), **Telemetryx** (consolidation play), all
+compared against our own **Northstar**.
+
+## Verified environment
+
+Probed, not assumed: `ag-ui-crewai==0.3.0`, `crewai==1.15.15`, Python 3.12,
+CopilotKit `1.67.1`, Next.js 16 / React 19. The AG-UI dojo runs this same
+CopilotKit set at `1.55.1` — the documented fallback if A2UI or interrupt wiring
+misbehaves at latest.
+
+## One upstream bug worth knowing
+
+`get_capabilities()` reports:
+
+```json
+"humanInTheLoop": { "supported": true, "mechanism": "frontend-tool-calls", "interrupts": false }
+```
+
+That `interrupts: false` is a **hardcoded literal**. The same module computes
+`_human_feedback_available = True`, and the package ships a working
+`AGUIFeedbackProvider` driving CrewAI's `@human_feedback` pause/resume — which is
+exactly what this demo runs on. Interrupts work; the capability blob
+under-reports them, so anyone probing capabilities programmatically would
+conclude CrewAI lacks the interrupt support 0.3.0 announces.
+
+Details and reproduction in [`docs/spec.md`](docs/spec.md).
+
+## Layout
+
+```
+agent/    Python 3.12 · uv · FastAPI · ag-ui-crewai · crewai
+  cadence/
+    flow.py            the brief pipeline
+    conversational.py  Conversational Flows endpoint
+    crew.py            Researcher → Analyst → Writer
+    tools.py           corpus-backed backend tools
+    parsing.py         crew text → typed state (unit-tested)
+    state.py           BriefState
+    server.py          FastAPI + endpoint registration
+  corpus/              committed competitor data
+  scripts/             verify_stream.py
+web/      Next.js 16 · CopilotKit 1.67.1 · Tailwind 4
+```

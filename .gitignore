@@ -1,0 +1,22 @@
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# node
+node_modules/
+.next/
+out/
+
+# env
+.env
+.env.local
+.env*.local
+
+# os / editor
+.DS_Store
+*.swp
+
+# demo run artifacts
+docs/evidence/*.jsonl

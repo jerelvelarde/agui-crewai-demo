@@ -1,0 +1,42 @@
+{
+  "slug": "beacon",
+  "name": "Beacon Analytics",
+  "tagline": "Product analytics for engineering teams",
+  "hq": "Boston, MA",
+  "founded": 2019,
+  "employees": 240,
+  "funding": "$78M Series B",
+  "positioning": "Enterprise-first. Lands via platform teams, expands to product org.",
+  "pages": [
+    {
+      "path": "/pricing",
+      "title": "Beacon Analytics — Pricing",
+      "text": "Beacon is priced per tracked user with an annual commitment. The Starter tier is capped at 10k monthly tracked users and excludes data export. Growth adds warehouse sync and 90-day retention. Enterprise unlocks unlimited retention, SSO/SAML, audit logs, and a dedicated success manager. All tiers meter overages at $0.12 per additional tracked user. Annual prepay is required above Starter; there is no month-to-month option on Growth or Enterprise."
+    },
+    {
+      "path": "/docs/quickstart",
+      "title": "Beacon Docs — Quickstart",
+      "text": "Install the Beacon SDK and initialize with your project key. Beacon requires an explicit identify() call before any event is attributed to a user; anonymous events are dropped after 24 hours unless stitching is enabled. Server-side ingestion is available on Growth and above via the HTTP API. The SDK adds roughly 34kb gzipped to a web bundle."
+    },
+    {
+      "path": "/docs/limits",
+      "title": "Beacon Docs — Rate limits and quotas",
+      "text": "The ingestion API accepts 1,000 events per second per project. Bursts above the limit return 429 and are not retried by the SDK. Warehouse sync runs every 6 hours on Growth and every hour on Enterprise; real-time sync is not offered. Custom properties are capped at 40 per event."
+    }
+  ],
+  "pricing": [
+    {"tier": "Starter", "monthly_usd": 0, "seats": 3, "tracked_users": "10k", "notes": "No data export, 30-day retention"},
+    {"tier": "Growth", "monthly_usd": 899, "seats": 15, "tracked_users": "100k", "notes": "Warehouse sync every 6h, 90-day retention, annual prepay"},
+    {"tier": "Enterprise", "monthly_usd": null, "seats": "unlimited", "tracked_users": "custom", "notes": "SSO/SAML, audit logs, unlimited retention, custom contract"}
+  ],
+  "reviews": [
+    {"source": "G2", "rating": 4.3, "date": "2026-05-14", "quote": "Rock solid ingestion and the warehouse sync just works. Pricing gets painful the moment you cross a tracked-user tier — we jumped 3x in one renewal."},
+    {"source": "G2", "rating": 3.5, "date": "2026-06-02", "quote": "Powerful but heavy. Onboarding took our platform team most of a quarter, and the required identify() call broke attribution on our marketing site for weeks."},
+    {"source": "Reddit r/devtools", "rating": null, "date": "2026-07-19", "quote": "Beacon is what you buy when procurement wants SOC2 and a CSM on speed dial. Not what you buy when you want to ship something Friday."}
+  ],
+  "changelog": [
+    {"date": "2026-07-30", "entry": "Hourly warehouse sync on Enterprise"},
+    {"date": "2026-06-11", "entry": "Audit log export (Enterprise)"},
+    {"date": "2026-04-22", "entry": "Deprecated legacy v1 ingestion endpoint"}
+  ]
+}

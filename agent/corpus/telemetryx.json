@@ -1,0 +1,41 @@
+{
+  "slug": "telemetryx",
+  "name": "Telemetryx",
+  "tagline": "Unified observability and product analytics",
+  "hq": "Austin, TX",
+  "founded": 2016,
+  "employees": 610,
+  "funding": "$210M Series D",
+  "positioning": "Consolidation play. Sells 'one bill instead of four' to platform leadership.",
+  "pages": [
+    {
+      "path": "/pricing",
+      "title": "Telemetryx — Plans",
+      "text": "Telemetryx bundles logs, metrics, traces and product analytics into a single platform fee starting at $2,400/month, plus consumption. Product analytics is not sold standalone — it is an add-on to the observability platform. Seats are included but capped by role: viewer seats are unlimited, builder seats are $40/month each. Contracts are annual with a 20% uplift for month-to-month. Retention is 13 months across all data types."
+    },
+    {
+      "path": "/docs/quickstart",
+      "title": "Telemetryx Docs — Getting started",
+      "text": "Telemetryx ingests via the OpenTelemetry collector; there is no proprietary SDK for web analytics, so browser events require a custom OTel web bridge that the team maintains as a community project. Expect a multi-week setup for product analytics specifically. Server-side is first-class."
+    },
+    {
+      "path": "/docs/limits",
+      "title": "Telemetryx Docs — Quotas",
+      "text": "No documented per-second ingestion cap; throughput is governed by your consumption contract. Warehouse sync is real-time via the streaming export. SSO, SCIM, and audit logs are included at every tier. The primary constraint customers report is cost predictability rather than technical limits."
+    }
+  ],
+  "pricing": [
+    {"tier": "Platform", "monthly_usd": 2400, "seats": "unlimited viewers", "tracked_users": "consumption-based", "notes": "Builder seats $40/mo, annual contract, analytics is an add-on"},
+    {"tier": "Platform + Analytics", "monthly_usd": 3900, "seats": "unlimited viewers", "tracked_users": "consumption-based", "notes": "Real-time export, SSO/SCIM/audit included, 13-month retention"}
+  ],
+  "reviews": [
+    {"source": "G2", "rating": 4.1, "date": "2026-05-21", "quote": "One vendor instead of four genuinely simplified our life, and governance is best in class. But nobody on the team can predict next month's bill within 30%."},
+    {"source": "G2", "rating": 2.9, "date": "2026-06-17", "quote": "We bought it for observability and inherited the analytics. Product managers never adopted it — the OTel web bridge was too fragile to trust."},
+    {"source": "Gartner Peer Insights", "rating": 4.0, "date": "2026-07-02", "quote": "Strong consolidation story for platform leadership. Weak self-serve motion; expect professional services."}
+  ],
+  "changelog": [
+    {"date": "2026-08-01", "entry": "Streaming export to Snowflake GA"},
+    {"date": "2026-06-25", "entry": "SCIM provisioning at all tiers"},
+    {"date": "2026-05-09", "entry": "OTel web bridge moved to community maintenance"}
+  ]
+}

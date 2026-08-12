@@ -1,0 +1,35 @@
+{
+  "slug": "northstar",
+  "name": "Northstar",
+  "is_us": true,
+  "tagline": "Product analytics that a whole team can actually use",
+  "hq": "New York, NY",
+  "founded": 2021,
+  "employees": 88,
+  "funding": "$31M Series A",
+  "positioning": "Land bottom-up on DX, expand on governance. The middle Beacon leaves open and Pulsegrid can't reach.",
+  "pages": [
+    {
+      "path": "/pricing",
+      "title": "Northstar — Pricing",
+      "text": "Northstar charges per event with unlimited seats on every plan. Free includes 2M events per month and 30-day retention. Team is $199/month for 20M events with 12-month retention, warehouse sync every 15 minutes, and SSO included — not gated behind an enterprise call. Enterprise adds audit logs, SCIM, custom retention and a DPA. No annual commitment is required at any tier and overages bill at the standard per-event rate."
+    },
+    {
+      "path": "/docs/quickstart",
+      "title": "Northstar Docs — Quickstart",
+      "text": "One snippet, events flow immediately, identify() optional with retroactive stitching. Web SDK is 11kb gzipped. Server-side ingestion on every plan including Free."
+    }
+  ],
+  "pricing": [
+    {"tier": "Free", "monthly_usd": 0, "seats": "unlimited", "tracked_users": "2M events", "notes": "30-day retention, server-side included"},
+    {"tier": "Team", "monthly_usd": 199, "seats": "unlimited", "tracked_users": "20M events", "notes": "SSO included, 15-min warehouse sync, 12-month retention"},
+    {"tier": "Enterprise", "monthly_usd": null, "seats": "unlimited", "tracked_users": "custom", "notes": "Audit logs, SCIM, custom retention, DPA"}
+  ],
+  "reviews": [
+    {"source": "G2", "rating": 4.5, "date": "2026-07-11", "quote": "SSO at $199 is the whole reason we chose it. Every competitor wanted an annual contract to get past the security review."}
+  ],
+  "changelog": [
+    {"date": "2026-08-06", "entry": "15-minute warehouse sync on Team"},
+    {"date": "2026-07-02", "entry": "SSO moved down to Team tier"}
+  ]
+}

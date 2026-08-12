@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+    --surface-main: #dedee9;
+    --surface-background: #dbdbe5;
+    --surface-container: #ffffff;
+    --surface-containerHovered: #fafcfa;
+    --border-default: #ffffff;
+    --border-container: #dbdbe5;
+    --text-primary: #010507;
+    --text-secondary: #57575b;
+    --text-disabled: #838389;
+    --text-invert: #ffffff;
+    --white-50: rgba(255, 255, 255, 0.5);
+    --white-70: rgba(255, 255, 255, 0.7);
+    --white-65: rgba(255, 255, 255, 0.65);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--surface-main);
+    color: var(--text-primary);
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Glass card — the frosted panel every surface in the workspace is built from. */
+.glass {
+    background: var(--white-50);
+    border: 2px solid var(--border-default);
+    border-radius: 8px;
+}
+
+.mono {
+    font-family: "Spline Sans Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* The brief document. Markdown-ish prose rendered from streamed state. */
+.brief-body p { margin: 0 0 12px; font-size: 14px; line-height: 22px; }
+.brief-body p:last-child { margin-bottom: 0; }
+
+/* Keep the CopilotKit chat panel on the lavender theme rather than its default white. */
+.copilotKitWindow, .copilotKitSidebar { font-family: inherit; }

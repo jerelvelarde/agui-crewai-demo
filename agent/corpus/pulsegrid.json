@@ -1,0 +1,42 @@
+{
+  "slug": "pulsegrid",
+  "name": "Pulsegrid",
+  "tagline": "Usage-based analytics that starts free",
+  "hq": "Remote (Berlin)",
+  "founded": 2022,
+  "employees": 46,
+  "funding": "$12M Seed",
+  "positioning": "Bottom-up. Free tier is genuinely usable; monetizes on volume, not seats.",
+  "pages": [
+    {
+      "path": "/pricing",
+      "title": "Pulsegrid — Pricing",
+      "text": "Pulsegrid charges per event ingested, not per seat. Seats are unlimited on every plan including Free. The Free tier includes 1M events per month with full feature access and 14-day retention. Paid plans start at $49/month for 5M events and extend retention to 12 months. There is no annual commitment and no overage penalty — ingestion above your plan is billed at the same per-event rate. Self-hosting is available under a source-available license at no license cost."
+    },
+    {
+      "path": "/docs/quickstart",
+      "title": "Pulsegrid Docs — Quickstart",
+      "text": "Drop in the Pulsegrid snippet and events flow immediately; identify() is optional and anonymous sessions are stitched retroactively when a user later identifies. The web SDK is 9kb gzipped. Server-side ingestion is available on all plans including Free."
+    },
+    {
+      "path": "/docs/limits",
+      "title": "Pulsegrid Docs — Limits",
+      "text": "Ingestion accepts 500 events per second per project on paid plans, 100 on Free. Warehouse sync is not offered; Pulsegrid instead exposes a read-only Postgres endpoint you can query directly. There is no SSO on Free or Starter — SAML lands on the $499 Scale plan. Audit logging is not currently available on any plan."
+    }
+  ],
+  "pricing": [
+    {"tier": "Free", "monthly_usd": 0, "seats": "unlimited", "tracked_users": "1M events", "notes": "Full features, 14-day retention"},
+    {"tier": "Starter", "monthly_usd": 49, "seats": "unlimited", "tracked_users": "5M events", "notes": "12-month retention, no commitment"},
+    {"tier": "Scale", "monthly_usd": 499, "seats": "unlimited", "tracked_users": "50M events", "notes": "SAML SSO, read-only Postgres endpoint"}
+  ],
+  "reviews": [
+    {"source": "G2", "rating": 4.6, "date": "2026-06-28", "quote": "The free tier is not a demo, it's a product. We ran production on it for five months before paying. Per-event pricing meant our bill scaled with usage instead of headcount."},
+    {"source": "G2", "rating": 3.2, "date": "2026-07-08", "quote": "Great DX, thin on governance. No audit logs and SSO only at $499 was a hard stop for our security review."},
+    {"source": "Hacker News", "rating": null, "date": "2026-07-25", "quote": "Pulsegrid is the one I'd pick for a new project. Ask me again when legal gets involved."}
+  ],
+  "changelog": [
+    {"date": "2026-08-04", "entry": "Read-only Postgres endpoint GA"},
+    {"date": "2026-07-15", "entry": "Retroactive anonymous session stitching"},
+    {"date": "2026-05-30", "entry": "Source-available self-hosting"}
+  ]
+}
