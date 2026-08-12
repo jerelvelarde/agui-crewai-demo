@@ -1,4 +1,4 @@
-.PHONY: install agent web dev verify verify-multimodal test capabilities
+.PHONY: install agent web dev verify verify-multimodal test capabilities record
 
 install:
 	cd agent && uv venv --python 3.12 .venv && uv pip install -e . && uv pip install pytest httpx
@@ -29,3 +29,7 @@ capabilities:
 # Same brief, but the prompt carries an attached image (multimodal path).
 verify-multimodal:
 	cd agent && .venv/bin/python scripts/verify_stream.py --multimodal
+
+# Records the demo running as 1080p footage into docs/video/ (needs both servers up).
+record:
+	cd agent && .venv/bin/python scripts/record_demo.py

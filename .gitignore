@@ -20,3 +20,6 @@ out/
 
 # demo run artifacts
 docs/evidence/*.jsonl
+
+# recorded footage (large binaries)
+docs/video/

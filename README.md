@@ -65,6 +65,21 @@ make verify-multimodal   # same brief, prompt carries an attached image
 make capabilities        # what this install says it supports
 ```
 
+## Recording it
+
+```bash
+make record   # both servers must be up
+```
+
+Drives the real app in a headless browser and captures 1080p footage to
+`docs/video/` as `.webm` plus an H.264 `.mp4` (faststart, so it plays inline on
+X, LinkedIn and Slack). Deliberately **clean footage** — no burned-in captions
+or titles, so it can be narrated or titled in post.
+
+It prints a chapter list with timestamps, which is what you want for trimming:
+the crew phase is the long stretch, and the beats either side of it are where the
+interesting frames are.
+
 What `verify-multimodal` does and does not prove: it proves the image part
 travels the whole path — AG-UI `ImageInputContent` → the bridge's `image_url`
 conversion → the provider — because the provider validates the bytes (a
