@@ -12,7 +12,7 @@ web:
 
 # Both halves. Ctrl-C stops both.
 dev:
-	@echo "agent → http://localhost:8000   web → http://localhost:3000"
+	@echo "agent → http://localhost:8008   web → http://localhost:3000"
 	@$(MAKE) -j2 agent web
 
 test:
@@ -24,4 +24,4 @@ verify:
 
 # What this install actually supports, straight from the package.
 capabilities:
-	@curl -s http://localhost:8000/healthz | python3 -m json.tool
+	@curl -s http://localhost:8008/healthz | python3 -m json.tool

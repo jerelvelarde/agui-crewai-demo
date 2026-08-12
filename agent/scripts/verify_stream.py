@@ -6,7 +6,7 @@ checks that the wire carries the events the feature is supposed to produce, then
 prints a checklist. Anything it cannot prove is reported as MISSING rather than
 quietly passing.
 
-    uv run python scripts/verify_stream.py            # against localhost:8000
+    uv run python scripts/verify_stream.py            # against localhost:8008
     uv run python scripts/verify_stream.py --url ...  # against something else
 
 Writes the raw event stream to docs/evidence/ for screenshots and debugging.
@@ -87,7 +87,7 @@ def find_interrupt(events: list[dict]) -> dict | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", default="http://localhost:8000/brief")
+    parser.add_argument("--url", default="http://localhost:8008/brief")
     parser.add_argument("--prompt", default=PROMPT)
     args = parser.parse_args()
 

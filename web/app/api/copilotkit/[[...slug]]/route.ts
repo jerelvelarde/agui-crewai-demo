@@ -7,7 +7,7 @@ import { CrewAIAgent } from "@ag-ui/crewai";
 import { handle } from "hono/vercel";
 import type { AbstractAgent } from "@ag-ui/client";
 
-const AGENT_URL = process.env.CADENCE_AGENT_URL ?? "http://localhost:8000";
+const AGENT_URL = process.env.CADENCE_AGENT_URL ?? "http://localhost:8008";
 
 const runtime = new CopilotRuntime({
   agents: {

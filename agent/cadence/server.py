@@ -58,7 +58,7 @@ def main() -> None:
     uvicorn.run(
         "cadence.server:app",
         host=os.getenv("CADENCE_HOST", "0.0.0.0"),
-        port=int(os.getenv("CADENCE_PORT", "8000")),
+        port=int(os.getenv("CADENCE_PORT", "8008")),
         reload=bool(os.getenv("CADENCE_RELOAD")),
     )
 
