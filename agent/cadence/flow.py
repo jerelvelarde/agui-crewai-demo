@@ -334,7 +334,10 @@ class BriefFlow(Flow[BriefState]):
         self.state.sections = [
             Section(key=f"s{index}", title=title) for index, title in enumerate(outline)
         ]
-        await self._mark("Analyst", "done", self.state.scorecard.verdict or "Analysis complete")
+        # Short status only — the verdict is shown once, as the brief's lede.
+        await self._mark(
+            "Analyst", "done", f"Scored 3 axes · {len(outline)} sections proposed"
+        )
         return "present"
 
     @listen(research)

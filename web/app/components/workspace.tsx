@@ -1,14 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { useAgent, useInterrupt, UseAgentUpdate, CopilotChat } from "@copilotkit/react-core/v2";
+import {
+  CopilotChat,
+  useAgent,
+  useDefaultRenderTool,
+  useInterrupt,
+  UseAgentUpdate,
+} from "@copilotkit/react-core/v2";
 import type { BriefState, Stage } from "../lib/types";
+import { AgentTaskCard, AgentTaskProvider, useAgentTasks } from "./agent-tasks";
 import { BlurCircles } from "./blur-circles";
-import { BriefDoc, CrewTimeline, FindingsPanel, ScorecardPanel, SectionTitle, StageBar } from "./panels";
+import {
+  BriefDoc,
+  CrewTimeline,
+  EmptyState,
+  FindingsPanel,
+  ScorecardPanel,
+  SectionTitle,
+  StageHeader,
+  WorkingPlaceholder,
+} from "./panels";
 
 /** The outline-approval card.
  *
- * This renders from a genuine AG-UI interrupt: the CrewAI flow paused inside
+ * Renders from a genuine AG-UI interrupt: the CrewAI flow paused inside
  * `@human_feedback`, the bridge ended the run with `RUN_FINISHED` carrying an
  * interrupt outcome, and `resolve()` submits a resume that restarts the flow
  * from the pause. The resume payload becomes the feedback string CrewAI
@@ -24,32 +40,86 @@ function ApprovalCard({
   const [note, setNote] = useState("");
   const [sent, setSent] = useState(false);
   const outline: string = interrupt?.metadata?.crewai?.output ?? "";
-  const options: string[] = interrupt?.response_schema?.enum ?? ["approved", "revise"];
+  const options: string[] = interrupt?.response_schema?.enum ??
+    interrupt?.responseSchema?.enum ?? ["approved", "revise"];
 
   const send = (value: string) => {
     setSent(true);
     resolve(value);
   };
 
+  // Outline arrives as "1. Title" lines under a header line.
+  const lines = outline.split("\n").filter(Boolean);
+  const items = lines.filter((l) => /^\s*\d+[.)]/.test(l));
+
   return (
     <div
       className="glass"
-      style={{ padding: 16, zIndex: 1, position: "relative", background: "var(--white-70)" }}
+      style={{
+        padding: "18px 20px",
+        zIndex: 2,
+        position: "relative",
+        background: "var(--surface-container)",
+        border: "2px solid var(--text-primary)",
+      }}
     >
-      <SectionTitle title="Approval required" trailing="run paused" />
-      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 4px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span
+          style={{
+            fontSize: 10,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            fontWeight: 600,
+          }}
+        >
+          Approval required
+        </span>
+        <div style={{ flex: 1, height: 1, background: "var(--border-container)" }} />
+        <span className="mono" style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+          run paused
+        </span>
+      </div>
+
+      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 0 14px", maxWidth: "64ch" }}>
         {interrupt?.message ?? "Approve this outline?"}
       </p>
-      {outline ? (
+
+      {items.length ? (
+        <ol
+          style={{
+            margin: "0 0 18px",
+            padding: 0,
+            listStyle: "none",
+            display: "flex",
+            flexDirection: "column",
+            gap: 7,
+            maxWidth: "68ch",
+          }}
+        >
+          {items.map((item, index) => (
+            <li key={index} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+              <span
+                className="mono"
+                style={{ fontSize: 10, color: "var(--text-disabled)", flexShrink: 0 }}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+                {item.replace(/^\s*\d+[.)]\s*/, "")}
+              </span>
+            </li>
+          ))}
+        </ol>
+      ) : outline ? (
         <pre
           className="mono"
           style={{
             fontSize: 12,
             lineHeight: 1.6,
-            margin: "0 0 16px",
+            margin: "0 0 18px",
             padding: 12,
             borderRadius: 4,
-            background: "var(--surface-container)",
+            background: "var(--surface-main)",
             whiteSpace: "pre-wrap",
             overflowX: "auto",
           }}
@@ -62,52 +132,62 @@ function ApprovalCard({
         value={note}
         disabled={sent}
         onChange={(event) => setNote(event.target.value)}
-        placeholder="Optional: what should change?"
+        placeholder="Optional — what should change?"
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !sent) {
+            send(note.trim() ? note.trim() : options[0]);
+          }
+        }}
         style={{
           width: "100%",
-          height: 32,
-          fontSize: 14,
+          maxWidth: 520,
+          height: 34,
+          fontSize: 13,
           padding: "0 12px",
           marginBottom: 12,
           borderRadius: 4,
           border: "1px solid var(--border-container)",
-          background: "var(--surface-container)",
+          background: "var(--surface-main)",
           fontFamily: "inherit",
+          display: "block",
         }}
       />
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8, maxWidth: 520 }}>
         <button
           disabled={sent}
           onClick={() => send(note.trim() ? note.trim() : options[0])}
           style={{
             flex: 1,
-            height: 32,
-            fontSize: 14,
+            height: 34,
+            fontSize: 13,
             fontWeight: 500,
             border: "none",
             borderRadius: 8,
             cursor: sent ? "default" : "pointer",
             background: "var(--text-primary)",
             color: "var(--text-invert)",
-            opacity: sent ? 0.5 : 1,
+            opacity: sent ? 0.4 : 1,
+            font: "inherit",
           }}
         >
-          {note.trim() ? "Send changes" : "Approve"}
+          {sent ? "Sent" : note.trim() ? "Send changes" : "Approve"}
         </button>
         <button
           disabled={sent}
           onClick={() => send(options[1] ?? "revise")}
           style={{
             flex: 1,
-            height: 32,
-            fontSize: 14,
+            height: 34,
+            fontSize: 13,
             fontWeight: 500,
-            border: "none",
             borderRadius: 8,
+            border: "1px solid var(--border-container)",
             cursor: sent ? "default" : "pointer",
-            background: "var(--surface-container)",
-            opacity: sent ? 0.5 : 1,
+            background: "transparent",
+            opacity: sent ? 0.4 : 1,
+            font: "inherit",
+            color: "inherit",
           }}
         >
           Rework outline
@@ -117,13 +197,32 @@ function ApprovalCard({
   );
 }
 
-export function Workspace() {
-  const { agent } = useAgent({
-    agentId: "brief",
-    updates: [UseAgentUpdate.OnStateChanged, UseAgentUpdate.OnRunStatusChanged],
-  });
+/** Registers the wildcard tool renderer. Must live inside AgentTaskProvider so
+ *  each call can register itself and let the group leader draw one card. */
+function AgentTaskRenderer() {
+  const store = useAgentTasks();
 
-  const state = (agent.state ?? {}) as BriefState;
+  useDefaultRenderTool(
+    {
+      render: ({ name, toolCallId, parameters, status, result }) => (
+        <AgentTaskCard
+            toolCallId={toolCallId}
+            name={name}
+            parameters={parameters}
+            status={status}
+          result={result}
+        />
+      ),
+    },
+    [store],
+  );
+
+  return null;
+}
+
+function WorkspaceInner({ agent }: { agent: any }) {
+  const tasks = useAgentTasks();
+  const state = (agent?.state ?? {}) as BriefState;
   const stage: Stage = state.stage ?? "idle";
 
   // renderInChat: false so the approval card lands in the canvas beside the
@@ -135,20 +234,20 @@ export function Workspace() {
     ),
   });
 
-  const hasWork = Boolean(state.target) || (state.crew?.length ?? 0) > 0;
+  const started = Boolean(state.target) || (state.crew?.length ?? 0) > 0;
+  const hasBrief = (state.sections?.length ?? 0) > 0;
+  const findings = state.findings ?? [];
+  const verdict = state.scorecard?.verdict;
+
+  const send = (prompt: string) => {
+    // Fire the suggested prompt straight through the agent.
+    void agent?.addMessage?.({ id: crypto.randomUUID(), role: "user", content: prompt });
+    void agent?.runAgent?.();
+  };
 
   return (
-    <div
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        minHeight: "100vh",
-        display: "flex",
-        gap: 8,
-        padding: 8,
-      }}
-    >
-      <BlurCircles />
+    <>
+      <AgentTaskRenderer />
 
       {/* Canvas */}
       <div
@@ -162,19 +261,67 @@ export function Workspace() {
           maxHeight: "calc(100vh - 16px)",
         }}
       >
-        <StageBar stage={stage} target={state.target} axis={state.axis} />
+        <StageHeader stage={stage} target={state.target} axis={state.axis} />
 
-        {approvalCard}
-
-        {hasWork ? (
-          <>
-            <CrewTimeline crew={state.crew ?? []} />
-            {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
-            <FindingsPanel findings={state.findings ?? []} />
-            <BriefDoc sections={state.sections ?? []} />
-          </>
+        {!started ? (
+          <EmptyState onPick={send} />
         ) : (
-          <EmptyState />
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+            }}
+          >
+            {/* Primary: the approval decision, then the deliverable. */}
+            <div
+              style={{
+                flex: "1 1 560px",
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {approvalCard}
+              {hasBrief && stage !== "awaiting_approval" ? (
+                <BriefDoc sections={state.sections ?? []} target={state.target} verdict={verdict} />
+              ) : null}
+              {!hasBrief ? <WorkingPlaceholder stage={stage} /> : null}
+            </div>
+
+            {/* Evidence rail: how the brief got made. */}
+            <div
+              style={{
+                flex: "0 1 330px",
+                minWidth: 260,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
+              {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
+              <FindingsPanel findings={findings} defaultOpen={stage === "research"} />
+              {hasBrief && stage === "awaiting_approval" ? (
+                <div className="glass" style={{ padding: 14, zIndex: 1, position: "relative" }}>
+                  <SectionTitle title="Brief" trailing="awaiting approval" />
+                  <p
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 1.55,
+                      margin: "0 4px",
+                      color: "var(--text-disabled)",
+                    }}
+                  >
+                    {state.sections?.length} sections are queued. Approve the outline and the
+                    writer fills them in one at a time.
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </div>
         )}
       </div>
 
@@ -194,7 +341,9 @@ export function Workspace() {
       >
         {/* flex:1 + min-width:0 are load-bearing. Without them this flex child
             shrinks to min-content and the chat wraps one character per line. */}
-        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <div
+          style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}
+        >
           <CopilotChat
             labels={{
               welcomeMessageText:
@@ -204,42 +353,31 @@ export function Workspace() {
           />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
-function EmptyState() {
-  const prompts = [
-    "Brief me on Pulsegrid's pricing vs ours",
-    "How does Beacon Analytics compare on governance?",
-    "Where is Telemetryx exposed?",
-  ];
+export function Workspace() {
+  const { agent } = useAgent({
+    agentId: "brief",
+    updates: [UseAgentUpdate.OnStateChanged, UseAgentUpdate.OnRunStatusChanged],
+  });
 
   return (
-    <div className="glass" style={{ padding: 24, zIndex: 1, position: "relative" }}>
-      <SectionTitle title="What this demo shows" />
-      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 4px 16px" }}>
-        A three-agent CrewAI crew researches a competitor, an analyst scores them, the
-        run pauses for your approval, then a writer fills in the brief section by
-        section. Every step streams over AG-UI.
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        {prompts.map((prompt) => (
-          <div
-            key={prompt}
-            className="mono"
-            style={{
-              fontSize: 12,
-              padding: "8px 12px",
-              borderRadius: 4,
-              background: "var(--white-50)",
-              color: "var(--text-secondary)",
-            }}
-          >
-            {prompt}
-          </div>
-        ))}
-      </div>
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: "100vh",
+        display: "flex",
+        gap: 8,
+        padding: 8,
+      }}
+    >
+      <BlurCircles />
+      <AgentTaskProvider agent={agent as any}>
+        <WorkspaceInner agent={agent} />
+      </AgentTaskProvider>
     </div>
   );
 }
