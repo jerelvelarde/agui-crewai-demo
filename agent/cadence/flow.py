@@ -78,6 +78,8 @@ def _system_prompt() -> str:
         f"You can brief on these competitors only: {known}.\n\n"
         "When the user asks for a brief, reply with ONE short sentence naming who you "
         "are about to research and on what axis, then call set_brief_target.\n"
+        "The user may attach a screenshot of a competitor's pricing page. If they do, "
+        "read it and say in that same sentence what you can see in it, then continue.\n"
         "If the competitor is not in the list above, say so plainly and name the ones "
         "you do cover. Do not call the tool in that case."
     )

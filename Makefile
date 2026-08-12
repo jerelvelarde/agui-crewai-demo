@@ -1,4 +1,4 @@
-.PHONY: install agent web dev verify test capabilities
+.PHONY: install agent web dev verify verify-multimodal test capabilities
 
 install:
 	cd agent && uv venv --python 3.12 .venv && uv pip install -e . && uv pip install pytest httpx
@@ -25,3 +25,7 @@ verify:
 # What this install actually supports, straight from the package.
 capabilities:
 	@curl -s http://localhost:8008/healthz | python3 -m json.tool
+
+# Same brief, but the prompt carries an attached image (multimodal path).
+verify-multimodal:
+	cd agent && .venv/bin/python scripts/verify_stream.py --multimodal

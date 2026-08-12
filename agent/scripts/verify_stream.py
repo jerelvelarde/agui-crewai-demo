@@ -85,10 +85,67 @@ def find_interrupt(events: list[dict]) -> dict | None:
     return None
 
 
+def _png_b64(width: int = 64, height: int = 64, rgb: tuple[int, int, int] = (37, 99, 235)) -> str:
+    """Build a real PNG from the stdlib and return it base64-encoded.
+
+    Generated rather than pasted: OpenAI validates the bytes and rejects a
+    malformed image with "does not represent a valid image", so a hand-typed
+    literal is a liability. No binary fixture in the repo either.
+    """
+    import base64
+    import struct
+    import zlib
+
+    raw = b"".join(b"\x00" + bytes(rgb) * width for _ in range(height))
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        body = kind + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
+
+    png = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw, 9))
+        + chunk(b"IEND", b"")
+    )
+    return base64.b64encode(png).decode()
+
+
+def multimodal_messages(prompt: str) -> list[dict]:
+    """A user turn carrying text plus an image part.
+
+    Shape matches ``ag_ui.core.ImageInputContent``: a nested ``source`` object,
+    not a flat url. A flat ``{"type": "image", "url": ...}`` is rejected 422 by
+    the endpoint before the flow ever runs.
+    """
+    return [
+        {
+            "id": str(uuid.uuid4()),
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "data",
+                        "value": _png_b64(),
+                        "mimeType": "image/png",
+                    },
+                },
+            ],
+        }
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://localhost:8008/brief")
     parser.add_argument("--prompt", default=PROMPT)
+    parser.add_argument(
+        "--multimodal",
+        action="store_true",
+        help="Send the prompt with an attached image, to exercise the multimodal path.",
+    )
     args = parser.parse_args()
 
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
@@ -96,7 +153,11 @@ def main() -> int:
     evidence_path = EVIDENCE_DIR / f"stream-{stamp}.jsonl"
 
     thread_id = str(uuid.uuid4())
-    messages = [{"id": str(uuid.uuid4()), "role": "user", "content": args.prompt}]
+    if args.multimodal:
+        messages = multimodal_messages(args.prompt)
+        print("(multimodal: prompt carries an attached image part)")
+    else:
+        messages = [{"id": str(uuid.uuid4()), "role": "user", "content": args.prompt}]
 
     with httpx.Client() as client, evidence_path.open("w") as sink:
         print(f"→ run 1: {args.prompt}")

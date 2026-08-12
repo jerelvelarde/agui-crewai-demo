@@ -187,17 +187,22 @@ export function Workspace() {
           zIndex: 1,
           position: "relative",
           overflow: "hidden",
-          maxHeight: "calc(100vh - 16px)",
+          height: "calc(100vh - 16px)",
           display: "flex",
+          flexDirection: "column",
         }}
       >
-        <CopilotChat
-          labels={{
-            welcomeMessageText:
-              "Ask me for a competitive brief — try “brief me on Pulsegrid’s pricing vs ours”.",
-            chatInputPlaceholder: "Ask for a brief…",
-          }}
-        />
+        {/* flex:1 + min-width:0 are load-bearing. Without them this flex child
+            shrinks to min-content and the chat wraps one character per line. */}
+        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <CopilotChat
+            labels={{
+              welcomeMessageText:
+                "Ask me for a competitive brief — try “brief me on Pulsegrid’s pricing vs ours”.",
+              chatInputPlaceholder: "Ask for a brief…",
+            }}
+          />
+        </div>
       </div>
     </div>
   );

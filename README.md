@@ -31,7 +31,15 @@ Then ask: **“brief me on Pulsegrid's pricing vs ours”**.
 | Scorecard as a rich component | generative UI / A2UI | `flow.py::present` |
 | Run genuinely pauses, then resumes | interrupt / resume | `flow.py::approve_outline` |
 | Brief fills in section by section | shared-state streaming | `flow.py::_write_sections` |
+| Analyst checks shipping velocity over MCP | MCP tool visibility | `mcp_server.py` |
+| Attach a pricing screenshot to the ask | multimodal input | `make verify-multimodal` |
 | Per-turn routed Q&A | Conversational Flows | `conversational.py` |
+
+MCP is a real stdio server (`cadence/mcp_server.py`), spawned by CrewAI and
+attached to the Analyst via `Agent(mcps=[...])`. It produces genuine
+`mcp_connection_*` / `mcp_tool_execution_started` events and a real
+`shipping_velocity` tool call — not a stand-in. Set `CADENCE_DISABLE_MCP=1` to
+drop the subprocess.
 
 Two endpoints, on purpose:
 
@@ -53,8 +61,16 @@ interrupt on `RUN_FINISHED.outcome`, and a successful resume. Prints a checklist
 and writes the raw stream to `docs/evidence/`.
 
 ```bash
-make capabilities   # what this install says it supports
+make verify-multimodal   # same brief, prompt carries an attached image
+make capabilities        # what this install says it supports
 ```
+
+What `verify-multimodal` does and does not prove: it proves the image part
+travels the whole path — AG-UI `ImageInputContent` → the bridge's `image_url`
+conversion → the provider — because the provider validates the bytes (a
+malformed image fails the run outright) and the full brief still completes. It
+does **not** prove the model read anything meaningful, since the generated test
+image is a solid colour. For that, drop a real pricing screenshot into the chat.
 
 ## Offline by design
 
