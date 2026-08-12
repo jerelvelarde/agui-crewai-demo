@@ -83,10 +83,17 @@ def main() -> int:
             print("  (no reasoning bubble seen — continuing)", flush=True)
 
         try:
-            page.locator("text=Researcher").first.wait_for(state="visible", timeout=120000)
-            beat("Crew working — Researcher, then Analyst")
+            page.locator("text=/Tasking /").first.wait_for(state="visible", timeout=120000)
+            beat("Tasking the Researcher — live tool calls in chat")
+            page.wait_for_timeout(4000)
         except Exception:
-            print("  (crew panel not seen — continuing)", flush=True)
+            print("  (no task card seen — continuing)", flush=True)
+
+        try:
+            page.locator("text=/tool calls/").first.wait_for(state="visible", timeout=180000)
+            beat("Analyst scoring — MCP tool calls attributed on the crew panel")
+        except Exception:
+            print("  (crew tally not seen — continuing)", flush=True)
 
         page.locator("text=Approval required").first.wait_for(state="visible", timeout=420000)
         beat("Run paused — approval required")
@@ -97,7 +104,7 @@ def main() -> int:
         beat("Approved — run resumes")
 
         page.wait_for_function(
-            "() => document.body.innerText.includes('Done')", timeout=600000
+            "() => document.body.innerText.includes('Complete')", timeout=600000
         )
         beat("Brief written — 5/5 sections")
         page.wait_for_timeout(2000)
