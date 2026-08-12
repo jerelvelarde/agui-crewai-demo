@@ -28,8 +28,10 @@ from ag_ui_crewai import (
     apply_a2ui_plan_to_tools,
     copilotkit_emit_state,
     copilotkit_predict_state,
+    copilotkit_responses,
     copilotkit_stream,
     plan_a2ui_injection,
+    responses_channel_available,
 )
 from crewai.flow.flow import Flow, listen, start
 from crewai.flow.human_feedback import human_feedback
@@ -120,6 +122,96 @@ class BriefFlow(Flow[BriefState]):
                 )
         return ""
 
+    async def _complete(self, *, messages: list[Any], tools: list[Any] | None) -> Any:
+        """One streamed completion, over the channel that can carry reasoning.
+
+        litellm chat-completions carries no reasoning content for OpenAI's
+        reasoning models — OpenAI exposes reasoning summaries only through the
+        Responses API. So prefer that channel, and fall back to chat-completions
+        when this install cannot open it (the probe is a runtime capability
+        check, not a version comparison).
+
+        ``summary`` is required for anything to stream: without it the run
+        succeeds but produces no reasoning trace.
+        """
+        if responses_channel_available():
+            return await copilotkit_stream(
+                await copilotkit_responses(
+                    model=MODEL,
+                    messages=messages,
+                    tools=tools or None,
+                    reasoning={"effort": "medium", "summary": "auto"},
+                )
+            )
+
+        _LOGGER.info(
+            "Responses channel unavailable; falling back to chat-completions "
+            "(no reasoning stream on OpenAI reasoning models)."
+        )
+        return await copilotkit_stream(
+            await acompletion(model=MODEL, messages=messages, tools=tools or None, stream=True)
+        )
+
+    @staticmethod
+    def _tool_calls(message: Any) -> list[Any]:
+        calls = (
+            message.get("tool_calls")
+            if isinstance(message, dict)
+            else getattr(message, "tool_calls", None)
+        )
+        return list(calls or [])
+
+    @staticmethod
+    def _call_parts(call: Any) -> tuple[str | None, str | None, str]:
+        """Return ``(call_id, name, raw_arguments)`` for one tool call."""
+        call_id = call.get("id") if isinstance(call, dict) else getattr(call, "id", None)
+        function = call.get("function") if isinstance(call, dict) else getattr(call, "function", None)
+        name = function.get("name") if isinstance(function, dict) else getattr(function, "name", None)
+        raw = (
+            function.get("arguments")
+            if isinstance(function, dict)
+            else getattr(function, "arguments", "")
+        )
+        return call_id, name, raw or "{}"
+
+    async def _answer_tool_calls(self, message: Any, *, a2ui_tool: Any = None) -> None:
+        """Append a ``role="tool"`` message for every tool call in ``message``.
+
+        OpenAI rejects any later completion whose history contains an assistant
+        message with an unanswered ``tool_call_id``. Since this flow keeps the
+        whole conversation in ``state.messages`` and runs several completions
+        against it, every call the model makes must be answered here — including
+        ``generate_a2ui``, which the A2UI contract says the node runs itself.
+        """
+        for call in self._tool_calls(message):
+            call_id, name, raw = self._call_parts(call)
+            if not call_id:
+                continue
+
+            if a2ui_tool is not None and name == a2ui_tool.tool_name:
+                try:
+                    args = json.loads(raw)
+                except json.JSONDecodeError:
+                    args = {}
+                try:
+                    envelope = await a2ui_tool.run(args, tool_call_id=call_id, flow=self)
+                except Exception:
+                    _LOGGER.exception("generate_a2ui failed; answering the call so history stays valid")
+                    envelope = json.dumps({"error": "a2ui generation failed"})
+                self.state.messages.append(
+                    {"role": "tool", "tool_call_id": call_id, "content": envelope}
+                )
+                continue
+
+            if name == "set_brief_target":
+                content = f"Recorded: target={self.state.target}, axis={self.state.axis}."
+            else:
+                # A frontend action, or something we do not execute server-side.
+                content = "Acknowledged."
+            self.state.messages.append(
+                {"role": "tool", "tool_call_id": call_id, "content": content}
+            )
+
     def _findings_block(self) -> str:
         return "\n".join(f"- [{f.source}] {f.claim}" for f in self.state.findings) or "(none)"
 
@@ -156,27 +248,29 @@ class BriefFlow(Flow[BriefState]):
         )
         tools = apply_a2ui_plan_to_tools(tools, plan)
 
-        response = await copilotkit_stream(
-            await acompletion(
-                model=MODEL,
-                messages=[{"role": "system", "content": _system_prompt()}, *self.state.messages],
-                tools=tools,
-                stream=True,
-            )
+        response = await self._complete(
+            messages=[{"role": "system", "content": _system_prompt()}, *self.state.messages],
+            tools=tools,
         )
         message = response.choices[0].message
         self.state.messages.append(message)
 
         target, axis = self._read_target(message)
+        if target is not None:
+            record = corpus.resolve(target)
+            self.state.target = record["name"] if record else target
+            self.state.axis = axis
+
+        # Answer every tool call before returning: the next completion replays
+        # this history, and an unanswered tool_call_id is a hard 400.
+        await self._answer_tool_calls(message, a2ui_tool=plan["tool"] if plan else None)
+
         if target is None:
             # Nothing we cover — the assistant already said so in its reply.
             self.state.stage = "done"
             copilotkit_emit_state(self.state)
             return "no_target"
 
-        record = corpus.resolve(target)
-        self.state.target = record["name"] if record else target
-        self.state.axis = axis
         copilotkit_emit_state(self.state)
         return "researching"
 
@@ -268,19 +362,19 @@ class BriefFlow(Flow[BriefState]):
             "rendering rich UI, use it to show the scores as a comparison card."
         )
 
-        response = await copilotkit_stream(
-            await acompletion(
-                model=MODEL,
-                messages=[
-                    {"role": "system", "content": _system_prompt()},
-                    *self.state.messages,
-                    {"role": "user", "content": instruction},
-                ],
-                tools=tools or None,
-                stream=True,
-            )
+        response = await self._complete(
+            messages=[
+                {"role": "system", "content": _system_prompt()},
+                *self.state.messages,
+                {"role": "user", "content": instruction},
+            ],
+            tools=tools,
         )
-        self.state.messages.append(response.choices[0].message)
+        message = response.choices[0].message
+        self.state.messages.append(message)
+        # A generate_a2ui call is executed here and its envelope appended as the
+        # tool result — that is what puts the scorecard on screen as A2UI.
+        await self._answer_tool_calls(message, a2ui_tool=plan["tool"] if plan else None)
         copilotkit_emit_state(self.state)
         return "approve"
 
