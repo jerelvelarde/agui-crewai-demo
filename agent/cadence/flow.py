@@ -96,14 +96,14 @@ class BriefFlow(Flow[BriefState]):
 
     # ---------------------------------------------------------------- helpers
 
-    def _mark(self, agent: str, status: str, detail: str = "") -> None:
+    async def _mark(self, agent: str, status: str, detail: str = "") -> None:
         """Update one crew member's activity and push a snapshot."""
         for entry in self.state.crew:
             if entry.agent == agent:
                 entry.status = status  # type: ignore[assignment]
                 if detail:
                     entry.detail = detail
-        copilotkit_emit_state(self.state)
+        await copilotkit_emit_state(self.state)
 
     def _last_user_text(self) -> str:
         for message in reversed(self.state.messages or []):
@@ -231,11 +231,11 @@ class BriefFlow(Flow[BriefState]):
         """Work out who the brief is about. Streams reasoning and predicted state."""
         self.state.stage = "intake"
         self.state.crew = _crew_roster()
-        copilotkit_emit_state(self.state)
+        await copilotkit_emit_state(self.state)
 
         # Stream the tool's `target` argument straight into state.target, so the
         # canvas names the competitor before the call has even finished.
-        copilotkit_predict_state(
+        await copilotkit_predict_state(
             [StateItem(state_key="target", tool="set_brief_target", tool_argument="target")]
         )
 
@@ -268,10 +268,10 @@ class BriefFlow(Flow[BriefState]):
         if target is None:
             # Nothing we cover — the assistant already said so in its reply.
             self.state.stage = "done"
-            copilotkit_emit_state(self.state)
+            await copilotkit_emit_state(self.state)
             return "no_target"
 
-        copilotkit_emit_state(self.state)
+        await copilotkit_emit_state(self.state)
         return "researching"
 
     def _read_target(self, message: Any) -> tuple[str | None, str]:
@@ -307,7 +307,7 @@ class BriefFlow(Flow[BriefState]):
             return "no_target"
 
         self.state.stage = "research"
-        self._mark("Researcher", "working", "Gathering sourced facts")
+        await self._mark("Researcher", "working", "Gathering sourced facts")
 
         crew = build_research_crew()
         result = await crew.kickoff_async(
@@ -319,9 +319,9 @@ class BriefFlow(Flow[BriefState]):
         analysis_raw = outputs[1] if len(outputs) > 1 else str(result)
 
         self.state.findings = parse_findings(research_raw, self.state.target)
-        self._mark("Researcher", "done", f"{len(self.state.findings)} sourced findings")
+        await self._mark("Researcher", "done", f"{len(self.state.findings)} sourced findings")
 
-        self._mark("Analyst", "working", "Scoring and outlining")
+        await self._mark("Analyst", "working", "Scoring and outlining")
         self.state.scorecard = parse_scorecard(analysis_raw, self.state.target)
         outline = parse_outline(analysis_raw)
         if not outline:
@@ -332,7 +332,7 @@ class BriefFlow(Flow[BriefState]):
         self.state.sections = [
             Section(key=f"s{index}", title=title) for index, title in enumerate(outline)
         ]
-        self._mark("Analyst", "done", self.state.scorecard.verdict or "Analysis complete")
+        await self._mark("Analyst", "done", self.state.scorecard.verdict or "Analysis complete")
         return "present"
 
     @listen(research)
@@ -375,7 +375,13 @@ class BriefFlow(Flow[BriefState]):
         # A generate_a2ui call is executed here and its envelope appended as the
         # tool result — that is what puts the scorecard on screen as A2UI.
         await self._answer_tool_calls(message, a2ui_tool=plan["tool"] if plan else None)
-        copilotkit_emit_state(self.state)
+
+        # The pause happens in the very next step, and approve_outline is sync
+        # (the @human_feedback contract), so it cannot await an emit. Flip the
+        # stage here instead — otherwise the client sits on "research" while it
+        # is actually waiting on the user.
+        self.state.stage = "awaiting_approval"
+        await copilotkit_emit_state(self.state)
         return "approve"
 
     @listen(present)
@@ -396,9 +402,10 @@ class BriefFlow(Flow[BriefState]):
         The provider raises ``HumanFeedbackPending``, crewai persists the pending
         state, and the bridge terminates the run with an AG-UI interrupt. The next
         request resumes from here — keyed by ``thread_id``.
+
+        Sync on purpose, and it does not emit: ``present`` already published the
+        awaiting_approval stage.
         """
-        self.state.stage = "awaiting_approval"
-        copilotkit_emit_state(self.state)
         lines = "\n".join(f"{i + 1}. {title}" for i, title in enumerate(self.state.outline))
         return f"Proposed outline for the {self.state.target} brief:\n{lines}"
 
@@ -414,7 +421,7 @@ class BriefFlow(Flow[BriefState]):
         """Apply the reviewer's note, then write."""
         feedback = getattr(self.human_feedback, "feedback", "") or ""
         self.state.outline_decision = f"revise: {feedback}" if feedback else "revise"
-        copilotkit_emit_state(self.state)
+        await copilotkit_emit_state(self.state)
         note = (
             f"The reviewer asked for this change — honour it: {feedback}\n\n"
             if feedback
@@ -429,7 +436,7 @@ class BriefFlow(Flow[BriefState]):
         if self.state.outline_decision is None:
             self.state.outline_decision = "approved"
         self.state.stage = "writing"
-        self._mark("Writer", "working", "Writing the brief")
+        await self._mark("Writer", "working", "Writing the brief")
 
         crew = build_section_crew()
         findings = self._findings_block()
@@ -437,7 +444,7 @@ class BriefFlow(Flow[BriefState]):
 
         for section in self.state.sections:
             section.status = "writing"
-            copilotkit_emit_state(self.state)
+            await copilotkit_emit_state(self.state)
 
             result = await crew.kickoff_async(
                 inputs={
@@ -454,9 +461,9 @@ class BriefFlow(Flow[BriefState]):
             written = split_sections(body)
             section.body = match_section(section.title, written) or body
             section.status = "done"
-            copilotkit_emit_state(self.state)
+            await copilotkit_emit_state(self.state)
 
-        self._mark("Writer", "done", f"{len(self.state.sections)} sections written")
+        await self._mark("Writer", "done", f"{len(self.state.sections)} sections written")
         self.state.stage = "done"
-        copilotkit_emit_state(self.state)
+        await copilotkit_emit_state(self.state)
         return "done"

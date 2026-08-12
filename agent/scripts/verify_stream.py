@@ -145,6 +145,23 @@ def report(
     snapshots = counts.get("STATE_SNAPSHOT", 0)
     tool_results = counts.get("TOOL_CALL_RESULT", 0)
 
+    # Distinct stages actually observed on the wire. The bridge emits a snapshot
+    # on every method finish regardless, so a bare snapshot count proves nothing
+    # about progressive streaming — an un-awaited copilotkit_emit_state still
+    # leaves several snapshots behind. Watching the stage advance, and watching
+    # section bodies land one at a time, is what actually proves it.
+    stages: list[str] = []
+    section_fill: set[int] = set()
+    for event in events:
+        if event.get("type") != "STATE_SNAPSHOT":
+            continue
+        snapshot = event.get("snapshot") or {}
+        stage = snapshot.get("stage")
+        if stage and (not stages or stages[-1] != stage):
+            stages.append(stage)
+        written = sum(1 for s in (snapshot.get("sections") or []) if (s.get("body") or "").strip())
+        section_fill.add(written)
+
     checks = [
         ("Streaming transport (SSE, run lifecycle)", seen("RUN_STARTED") and seen("RUN_FINISHED")),
         ("Text message streaming", seen("TEXT_MESSAGE_CONTENT", "TEXT_MESSAGE_CHUNK")),
@@ -161,6 +178,14 @@ def report(
         ("Tool calls on the wire", seen("TOOL_CALL_START", "TOOL_CALL_CHUNK")),
         (f"Backend tool results ({tool_results} seen)", tool_results > 0),
         (f"Shared-state snapshots ({snapshots} seen)", snapshots > 1),
+        (
+            f"Stage advanced progressively ({' → '.join(stages) or 'none'})",
+            "awaiting_approval" in stages and "writing" in stages and "done" in stages,
+        ),
+        (
+            f"Brief filled in section by section ({len(section_fill)} distinct fill levels)",
+            len(section_fill) >= 3,
+        ),
         ("Real interrupt on RUN_FINISHED.outcome", interrupt is not None),
         ("Interrupt is resumable (stable id)", bool(interrupt and interrupt.get("id"))),
         (
@@ -196,7 +221,7 @@ def report(
     # Core capabilities the demo narrative depends on. MCP and A2UI are reported
     # but not required, because they depend on the client forwarding the flag and
     # on an MCP server being wired up.
-    required = [label for label, ok in checks[:10] if not ok]
+    required = [label for label, ok in checks[:12] if not ok]
     if required:
         print("\nFAILED — core capabilities missing:")
         for label in required:

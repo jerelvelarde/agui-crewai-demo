@@ -6,13 +6,38 @@ agent's work and attributes it, so the UI can show who did what instead of one
 undifferentiated blob of agent output.
 """
 
+import logging
 import os
+import sys
 
 from crewai import Agent, Crew, Process, Task
 
 from .tools import RESEARCH_TOOLS
 
+_LOGGER = logging.getLogger(__name__)
+
 MODEL = os.getenv("CADENCE_MODEL", "openai/gpt-5.4")
+
+# Set CADENCE_DISABLE_MCP=1 to drop the MCP subprocess (useful when recording on
+# a slow machine, or to show the demo degrading cleanly).
+_MCP_DISABLED = bool(os.getenv("CADENCE_DISABLE_MCP"))
+
+
+def _mcp_servers() -> list:
+    """The corpus MCP server, as a stdio subprocess.
+
+    Real MCP, not a stand-in: CrewAI spawns cadence.mcp_server and the bridge
+    translates its executions into TOOL_CALL_* + TOOL_CALL_RESULT plus CUSTOM
+    lifecycle events. Returns [] when unavailable so the crew still runs.
+    """
+    if _MCP_DISABLED:
+        return []
+    try:
+        from crewai.mcp import MCPServerStdio
+    except ImportError:
+        _LOGGER.warning("crewai.mcp unavailable (needs crewai >= 1.4); MCP tools disabled")
+        return []
+    return [MCPServerStdio(command=sys.executable, args=["-m", "cadence.mcp_server"])]
 
 
 def _researcher() -> Agent:
@@ -41,9 +66,14 @@ def _analyst() -> Agent:
         backstory=(
             "You score competitors on pricing pressure, governance and time to "
             "value, from 1 to 5. You are willing to say we lose when we lose — a "
-            "brief that flatters us is worthless to the person reading it."
+            "brief that flatters us is worthless to the person reading it. You "
+            "always check shipping velocity before scoring, because a competitor "
+            "shipping fast is a different threat from one standing still."
         ),
         llm=MODEL,
+        # Shipping-velocity tools arrive over MCP rather than as local tools, so
+        # the run exercises the MCP path end to end.
+        mcps=_mcp_servers(),
         verbose=True,
         allow_delegation=False,
     )
@@ -88,7 +118,9 @@ def build_research_crew() -> Crew:
 
     analyse = Task(
         description=(
-            "Using the Researcher's findings, score {target} against us from 1-5 on:\n"
+            "First call shipping_velocity for {target} to see how fast they are "
+            "shipping — this tool comes from the corpus MCP server.\n\n"
+            "Then, using the Researcher's findings, score {target} against us from 1-5 on:\n"
             "- pricing_pressure: how much their pricing threatens ours\n"
             "- governance: their SSO/audit/compliance strength\n"
             "- time_to_value: how fast a new team gets value\n"
