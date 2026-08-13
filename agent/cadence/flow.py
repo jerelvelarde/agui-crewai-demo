@@ -81,7 +81,10 @@ def _system_prompt() -> str:
         "The user may attach a screenshot of a competitor's pricing page. If they do, "
         "read it and say in that same sentence what you can see in it, then continue.\n"
         "If the competitor is not in the list above, say so plainly and name the ones "
-        "you do cover. Do not call the tool in that case."
+        "you do cover. Do not call the tool in that case.\n\n"
+        "Never narrate progress. The UI already shows which agent is working, which "
+        "tools ran and what was found, so commentary between steps is the same "
+        "information rendered twice."
     )
 
 
@@ -363,8 +366,11 @@ class BriefFlow(Flow[BriefState]):
             f"time_to_value={card.time_to_value if card else 0}.\n"
             f"Verdict: {card.verdict if card else ''}\n"
             f"Proposed outline: {', '.join(self.state.outline)}\n\n"
-            "Summarise this in two sentences for the user. If you have a tool for "
-            "rendering rich UI, use it to show the scores as a comparison card."
+            "Reply with ONE short sentence: the single sharpest thing the reader "
+            "should take away. Do NOT restate the scores or list the outline — both "
+            "are already on screen next to your message, and repeating them renders "
+            "the same answer twice. If you have a tool for rendering rich UI, use it "
+            "to show the comparison."
         )
 
         response = await self._complete(

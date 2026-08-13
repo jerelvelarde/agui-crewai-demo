@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   CopilotChat,
   useAgent,
+  useCopilotKit,
   useDefaultRenderTool,
   useInterrupt,
   UseAgentUpdate,
@@ -16,10 +17,9 @@ import {
   CrewTimeline,
   EmptyState,
   FindingsPanel,
+  ResearchProgress,
   ScorecardPanel,
-  SectionTitle,
   StageHeader,
-  WorkingPlaceholder,
 } from "./panels";
 
 /** The outline-approval card.
@@ -222,6 +222,7 @@ function AgentTaskRenderer() {
 
 function WorkspaceInner({ agent }: { agent: any }) {
   const tasks = useAgentTasks();
+  const { copilotkit } = useCopilotKit();
   const state = (agent?.state ?? {}) as BriefState;
   const stage: Stage = state.stage ?? "idle";
 
@@ -234,16 +235,46 @@ function WorkspaceInner({ agent }: { agent: any }) {
     ),
   });
 
-  const started = Boolean(state.target) || (state.crew?.length ?? 0) > 0;
-  const hasBrief = (state.sections?.length ?? 0) > 0;
   const findings = state.findings ?? [];
   const verdict = state.scorecard?.verdict;
+  const written = (state.sections ?? []).some((section) => (section.body ?? "").trim());
+
+  // One derived view, not stored. An earlier version tracked layout in state set
+  // from several places and the columns disagreed with each other mid-run; a
+  // single derivation from the run's own state removes that whole class of bug.
+  const view: "idle" | "research" | "approval" | "brief" = !(
+    state.target || (state.crew?.length ?? 0) > 0
+  )
+    ? "idle"
+    : approvalCard
+      ? "approval"
+      : written
+        ? "brief"
+        : "research";
 
   const send = (prompt: string) => {
-    // Fire the suggested prompt straight through the agent.
     void agent?.addMessage?.({ id: crypto.randomUUID(), role: "user", content: prompt });
-    void agent?.runAgent?.();
+    // Drive through copilotkit, not agent.runAgent(): the raw agent method runs
+    // without the tools and renderers registered by hooks, so the run would
+    // proceed with no task cards and no interrupt handling.
+    void copilotkit?.runAgent?.({ agent });
   };
+
+  const rail = (
+    <div
+      style={{
+        flex: "0 1 330px",
+        minWidth: 260,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
+      {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
+      <FindingsPanel findings={findings} defaultOpen={false} />
+    </div>
+  );
 
   return (
     <>
@@ -263,66 +294,54 @@ function WorkspaceInner({ agent }: { agent: any }) {
       >
         <StageHeader stage={stage} target={state.target} axis={state.axis} />
 
-        {!started ? (
-          <EmptyState onPick={send} />
-        ) : (
+        {view === "idle" ? <EmptyState onPick={send} /> : null}
+
+        {/* Research: one centred column. No brief panel and no skeleton of one —
+            the brief does not exist yet, so nothing stands in for it. */}
+        {view === "research" ? (
           <div
             style={{
               display: "flex",
+              flexDirection: "column",
               gap: 8,
-              alignItems: "flex-start",
-              flexWrap: "wrap",
+              maxWidth: 760,
+              width: "100%",
+              margin: "0 auto",
             }}
           >
-            {/* Primary: the approval decision, then the deliverable. */}
+            <ResearchProgress findingCount={findings.length} />
+            <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
+            {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
+            <FindingsPanel findings={findings} defaultOpen />
+          </div>
+        ) : null}
+
+        {/* Approval and brief: the decision or the deliverable takes the primary
+            column, evidence moves to the rail. */}
+        {view === "approval" || view === "brief" ? (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div
               style={{
                 flex: "1 1 560px",
                 minWidth: 0,
+                maxWidth: 860,
                 display: "flex",
                 flexDirection: "column",
                 gap: 8,
               }}
             >
               {approvalCard}
-              {hasBrief && stage !== "awaiting_approval" ? (
-                <BriefDoc sections={state.sections ?? []} target={state.target} verdict={verdict} />
-              ) : null}
-              {!hasBrief ? <WorkingPlaceholder stage={stage} /> : null}
-            </div>
-
-            {/* Evidence rail: how the brief got made. */}
-            <div
-              style={{
-                flex: "0 1 330px",
-                minWidth: 260,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
-              {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
-              <FindingsPanel findings={findings} defaultOpen={stage === "research"} />
-              {hasBrief && stage === "awaiting_approval" ? (
-                <div className="glass" style={{ padding: 14, zIndex: 1, position: "relative" }}>
-                  <SectionTitle title="Brief" trailing="awaiting approval" />
-                  <p
-                    style={{
-                      fontSize: 12,
-                      lineHeight: 1.55,
-                      margin: "0 4px",
-                      color: "var(--text-disabled)",
-                    }}
-                  >
-                    {state.sections?.length} sections are queued. Approve the outline and the
-                    writer fills them in one at a time.
-                  </p>
-                </div>
+              {view === "brief" ? (
+                <BriefDoc
+                  sections={state.sections ?? []}
+                  target={state.target}
+                  verdict={verdict}
+                />
               ) : null}
             </div>
+            {rail}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Copilot */}
@@ -345,6 +364,10 @@ function WorkspaceInner({ agent }: { agent: any }) {
           style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}
         >
           <CopilotChat
+            // Object slots merge over the bound props. Nobody copies an agent's
+            // reply in a demo, and a floating copy icon after every message was
+            // the main source of visual noise in the rail.
+            messageView={{ assistantMessage: { toolbarVisible: false } }}
             labels={{
               welcomeMessageText:
                 "Ask me for a competitive brief — try “brief me on Pulsegrid’s pricing vs ours”.",

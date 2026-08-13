@@ -211,7 +211,7 @@ export function CrewTimeline({
                     member.status === "done"
                       ? "var(--text-primary)"
                       : working
-                        ? "#FFAC4D"
+                        ? "var(--agent)"
                         : "var(--border-container)",
                 }}
               />
@@ -275,7 +275,16 @@ export function CrewTimeline({
   );
 }
 
+/** All three axes read the same way: higher = worse for us. So colour by threat
+ *  rather than painting every bar the same ink. Verified accent tokens only. */
+function threatColor(value: number): string {
+  if (value >= 4) return "var(--threat-high)";
+  if (value === 3) return "var(--threat-mid)";
+  return "var(--threat-low)";
+}
+
 function ScoreRow({ label, value }: { label: string; value: number }) {
+  const color = threatColor(value);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span style={{ fontSize: 11, color: "var(--text-secondary)", width: 92, flexShrink: 0 }}>
@@ -289,7 +298,7 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
               flex: 1,
               height: 5,
               borderRadius: 9999,
-              background: n <= value ? "var(--text-primary)" : "var(--border-container)",
+              background: n <= value ? color : "var(--border-container)",
             }}
           />
         ))}
@@ -319,8 +328,7 @@ export function ScorecardPanel({ card }: { card: Scorecard }) {
           lineHeight: 1.5,
         }}
       >
-        Higher pricing means more pressure on us. Higher governance and time-to-value
-        mean they are stronger there.
+        Every axis reads the same way: higher means more of a threat to us.
       </p>
     </div>
   );
@@ -511,31 +519,26 @@ export function BriefDoc({
   );
 }
 
-/** Shown in the main column while the crew works and there is no brief yet. */
-export function WorkingPlaceholder({ stage }: { stage: Stage }) {
-  const line =
-    stage === "intake"
-      ? "Working out who the brief is about…"
-      : "The crew is gathering sourced facts. Evidence appears on the right as it lands.";
+/** Shown while the crew researches, in place of a brief skeleton.
+ *
+ * Deliberately not a skeleton. Research runs ~25s, and a skeleton is a promise
+ * about *when* — hold one that long and it reads as a layout that failed to load
+ * rather than as anticipation. There is honest progress to show instead (agent
+ * activity, evidence landing one item at a time), so we show that and let the
+ * brief panel stay absent until it has real content.
+ */
+export function ResearchProgress({ findingCount }: { findingCount: number }) {
   return (
-    <div className="glass" style={{ padding: 24, zIndex: 1, position: "relative" }}>
-      <SectionTitle title="Brief" trailing="pending" />
-      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 4px 16px", maxWidth: "60ch" }}>
-        {line}
+    <div className="glass" style={{ padding: 20, zIndex: 1, position: "relative" }}>
+      <SectionTitle
+        title="Researching"
+        trailing={findingCount ? `${findingCount} found` : "gathering"}
+      />
+      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 4px", maxWidth: "60ch" }}>
+        {findingCount
+          ? `${findingCount} sourced ${findingCount === 1 ? "finding" : "findings"} so far. The brief appears once the outline is approved.`
+          : "The crew is reading pricing pages, docs and reviews. Findings appear here as they land."}
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-        {[100, 88, 94, 70].map((width, i) => (
-          <div
-            key={i}
-            style={{
-              height: 5,
-              width: `${width}%`,
-              borderRadius: 9999,
-              background: "var(--border-container)",
-            }}
-          />
-        ))}
-      </div>
     </div>
   );
 }

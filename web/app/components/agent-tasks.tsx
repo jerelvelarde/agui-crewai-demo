@@ -324,14 +324,28 @@ export function AgentTaskCard(call: TaskCall) {
   return (
     <div
       style={{
-        border: "1px solid var(--border-container)",
-        background: "var(--surface-container)",
-        borderRadius: 8,
-        padding: "10px 12px",
-        margin: "8px 0",
+        borderLeft: "1px solid var(--border-container)",
+        padding: "8px 0 8px 14px",
+        margin: 0,
         fontSize: 13,
+        position: "relative",
       }}
     >
+      {/* The dot sits on the rail, not beside it, so the borders of consecutive
+          cards join into one line. */}
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: -4,
+          top: 13,
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          background: done ? "var(--text-primary)" : "var(--agent)",
+          outline: "3px solid var(--surface-main)",
+        }}
+      />
       <button
         onClick={() => calls.length > 1 && done && setExpanded((e) => !e)}
         style={{
@@ -348,16 +362,6 @@ export function AgentTaskCard(call: TaskCall) {
           color: "inherit",
         }}
       >
-        <span
-          aria-hidden
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            flexShrink: 0,
-            background: done ? "var(--text-primary)" : "#FFAC4D",
-          }}
-        />
         <span style={{ fontWeight: 600 }}>
           {done ? who : `Tasking ${who}`}
         </span>
@@ -412,7 +416,7 @@ export function AgentTaskCard(call: TaskCall) {
                   flexShrink: 0,
                   marginTop: 6,
                   background:
-                    call.status === "complete" ? "var(--border-container)" : "#FFAC4D",
+                    call.status === "complete" ? "var(--border-container)" : "var(--agent)",
                 }}
               />
               <span style={{ color: "var(--text-secondary)", flexShrink: 0 }}>

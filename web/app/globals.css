@@ -14,6 +14,20 @@
     --white-50: rgba(255, 255, 255, 0.5);
     --white-70: rgba(255, 255, 255, 0.7);
     --white-65: rgba(255, 255, 255, 0.65);
+
+    /* Verified CopilotKit accent tokens. Nothing here is eyeballed. */
+    --mint: #85ecce;
+    --lilac: #bec2ff;
+    --orange: #ffac4d;
+    --red: #fa5f67;
+
+    /* Each accent has one semantic job, so a colour on screen means something.
+       --agent is the agent's own voice: active crew members, live tool rows,
+       the "writing…" marker. Everything else is data. */
+    --agent: #8b90f0;          /* lilac/400, darkened for contrast on light glass */
+    --threat-high: var(--red);
+    --threat-mid: var(--orange);
+    --threat-low: #34b894;     /* mint/400, darkened for contrast on light glass */
 }
 
 * { box-sizing: border-box; }
