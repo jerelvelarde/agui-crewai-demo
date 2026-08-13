@@ -1,19 +1,36 @@
 @import "tailwindcss";
 
+/* Dark surface, not a lavender-glass surface.
+ *
+ * #010507 is CopilotKit's approved dark brand context (grey/1000), not an
+ * invented dark mode. The verified accent tokens are kept exactly; what changes
+ * is the surface treatment, because a light lavender card is the one thing every
+ * CopilotKit demo has in common and it stops reading as identity.
+ *
+ * The token NAMES are unchanged from the light theme on purpose — components
+ * reference them, so the theme swaps in one place. */
 :root {
-    --surface-main: #dedee9;
-    --surface-background: #dbdbe5;
-    --surface-container: #ffffff;
-    --surface-containerHovered: #fafcfa;
-    --border-default: #ffffff;
-    --border-container: #dbdbe5;
-    --text-primary: #010507;
-    --text-secondary: #57575b;
-    --text-disabled: #838389;
-    --text-invert: #ffffff;
-    --white-50: rgba(255, 255, 255, 0.5);
-    --white-70: rgba(255, 255, 255, 0.7);
-    --white-65: rgba(255, 255, 255, 0.65);
+    /* Surfaces */
+    --surface-main: #010507;
+    --surface-background: #080b0f;
+    --surface-container: #0d1116;
+    --surface-containerHovered: #141a21;
+
+    /* Lines. Dark analogues of the glass idea rather than a copy of it —
+       implementation defaults, not verified brand tokens. */
+    --border-default: rgba(255, 255, 255, 0.1);
+    --border-container: rgba(255, 255, 255, 0.08);
+
+    /* Type */
+    --text-primary: #f2f4f7;
+    --text-secondary: #a8adb8;
+    --text-disabled: #71767f;
+    --text-invert: #010507;
+
+    /* Elevation washes (were translucent whites over lavender) */
+    --white-50: rgba(255, 255, 255, 0.028);
+    --white-70: rgba(255, 255, 255, 0.055);
+    --white-65: rgba(255, 255, 255, 0.04);
 
     /* Verified CopilotKit accent tokens. Nothing here is eyeballed. */
     --mint: #85ecce;
@@ -21,13 +38,32 @@
     --orange: #ffac4d;
     --red: #fa5f67;
 
-    /* Each accent has one semantic job, so a colour on screen means something.
-       --agent is the agent's own voice: active crew members, live tool rows,
-       the "writing…" marker. Everything else is data. */
-    --agent: #8b90f0;          /* lilac/400, darkened for contrast on light glass */
+    /* Each accent has exactly one semantic job, so a colour on screen means
+       something. --agent is the agent's own voice; everything else is data. */
+    --agent: var(--lilac);
     --threat-high: var(--red);
     --threat-mid: var(--orange);
-    --threat-low: #34b894;     /* mint/400, darkened for contrast on light glass */
+    --threat-low: var(--mint);
+
+    /* CopilotKit's chat reads these shadcn-style tokens but ships no values for
+       them, so the chat is themed from here rather than fought with overrides. */
+    --background: var(--surface-main);
+    --foreground: var(--text-primary);
+    --card: var(--surface-container);
+    --card-foreground: var(--text-primary);
+    --popover: var(--surface-container);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--text-invert);
+    --secondary: var(--surface-containerHovered);
+    --secondary-foreground: var(--text-primary);
+    --muted: var(--surface-background);
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--surface-containerHovered);
+    --accent-foreground: var(--text-primary);
+    --border: var(--border-container);
+    --input: var(--border-container);
+    --ring: var(--agent);
 }
 
 * { box-sizing: border-box; }
@@ -36,24 +72,25 @@ body {
     margin: 0;
     background: var(--surface-main);
     color: var(--text-primary);
+    /* Up from the browser default: the whole app read too small at 13-14px. */
+    font-size: 16px;
     font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
 }
 
-/* Glass card — the frosted panel every surface in the workspace is built from. */
+/* Panel — the dark analogue of the glass card. */
 .glass {
     background: var(--white-50);
-    border: 2px solid var(--border-default);
-    border-radius: 8px;
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
 }
 
 .mono {
     font-family: "Spline Sans Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
-/* The brief document. Markdown-ish prose rendered from streamed state. */
-.brief-body p { margin: 0 0 12px; font-size: 14px; line-height: 22px; }
+.brief-body p { margin: 0 0 14px; font-size: 16px; line-height: 26px; color: var(--text-primary); }
 .brief-body p:last-child { margin-bottom: 0; }
 
-/* Keep the CopilotKit chat panel on the lavender theme rather than its default white. */
-.copilotKitWindow, .copilotKitSidebar { font-family: inherit; }
+/* Placeholders need explicit colour on a dark surface or they render near-black. */
+input::placeholder, textarea::placeholder { color: var(--text-disabled); }

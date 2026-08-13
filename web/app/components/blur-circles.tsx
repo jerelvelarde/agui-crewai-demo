@@ -1,29 +1,35 @@
-/** The six signature CopilotCloud background ellipses.
+/** Background depth for the dark surface.
  *
- * The parent must be `position: relative; overflow: hidden`, and every content
- * card must sit at zIndex 1 so it renders above these.
+ * The light theme's six lavender/white ellipses do not survive on #010507 — white
+ * washes turn the surface grey and lose the point of a dark context. Same idea,
+ * rendered for dark: a few very low-opacity accent glows, all from verified
+ * tokens, at an opacity where they read as depth rather than as colour.
  */
 export function BlurCircles() {
-  const circles = [
-    { width: 446, height: 446, left: 1040, top: 11, background: "rgba(255, 172, 77, 0.2)" },
-    { width: 609, height: 609, left: 1339, top: 625, background: "#C9C9DA" },
-    { width: 609, height: 609, left: 670, top: -365, background: "#C9C9DA" },
-    { width: 609, height: 609, left: 508, top: 702, background: "#F3F3FC" },
-    { width: 446, height: 446, left: 128, top: 331, background: "rgba(255, 243, 136, 0.3)" },
-    { width: 446, height: 446, left: -205, top: 803, background: "rgba(255, 172, 77, 0.2)" },
+  const glows = [
+    { width: 620, height: 620, left: -180, top: -220, color: "rgba(190, 194, 255, 0.055)" },
+    { width: 520, height: 520, left: 780, top: -260, color: "rgba(133, 236, 206, 0.04)" },
+    { width: 700, height: 700, left: 420, top: 520, color: "rgba(190, 194, 255, 0.03)" },
+    { width: 460, height: 460, left: 1180, top: 640, color: "rgba(255, 172, 77, 0.035)" },
   ];
 
   return (
     <>
-      {circles.map((circle, index) => (
+      {glows.map((glow, index) => (
         <div
           key={index}
+          aria-hidden
           style={{
             position: "absolute",
+            width: glow.width,
+            height: glow.height,
+            left: glow.left,
+            top: glow.top,
             borderRadius: "50%",
-            filter: "blur(103px)",
+            background: glow.color,
+            filter: "blur(120px)",
             zIndex: 0,
-            ...circle,
+            pointerEvents: "none",
           }}
         />
       ))}

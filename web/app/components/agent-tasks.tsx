@@ -327,7 +327,7 @@ export function AgentTaskCard(call: TaskCall) {
         borderLeft: "1px solid var(--border-container)",
         padding: "8px 0 8px 14px",
         margin: 0,
-        fontSize: 13,
+        fontSize: 15,
         position: "relative",
       }}
     >
@@ -366,7 +366,7 @@ export function AgentTaskCard(call: TaskCall) {
           {done ? who : `Tasking ${who}`}
         </span>
         {group.step ? (
-          <span className="mono" style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+          <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
             {group.step}
           </span>
         ) : null}
@@ -374,7 +374,7 @@ export function AgentTaskCard(call: TaskCall) {
           <span
             className="mono"
             style={{
-              fontSize: 9,
+              fontSize: 11,
               padding: "1px 5px",
               borderRadius: 9999,
               background: "var(--white-65)",
@@ -386,7 +386,7 @@ export function AgentTaskCard(call: TaskCall) {
           </span>
         ) : null}
         <span style={{ flex: 1 }} />
-        <span className="mono" style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+        <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
           {done
             ? `${calls.length} ${calls.length === 1 ? "tool" : "tools"}`
             : finishedCount < calls.length
@@ -394,7 +394,7 @@ export function AgentTaskCard(call: TaskCall) {
               : `${calls.length} so far`}
         </span>
         {calls.length > 1 && done ? (
-          <span aria-hidden style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+          <span aria-hidden style={{ fontSize: 11, color: "var(--text-disabled)" }}>
             {expanded ? "▾" : "▸"}
           </span>
         ) : null}
@@ -426,7 +426,7 @@ export function AgentTaskCard(call: TaskCall) {
                 className="mono"
                 title={argHint(call.parameters)}
                 style={{
-                  fontSize: 11,
+                  fontSize: 13,
                   color: "var(--text-disabled)",
                   minWidth: 0,
                   overflow: "hidden",

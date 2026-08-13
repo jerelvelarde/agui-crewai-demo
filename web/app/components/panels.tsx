@@ -34,7 +34,7 @@ export function SectionTitle({
     >
       <span
         style={{
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 400,
           textTransform: "uppercase",
           letterSpacing: "0.05em",
@@ -46,12 +46,12 @@ export function SectionTitle({
       </span>
       <div style={{ flex: 1, height: 1, background: "var(--border-container)" }} />
       {trailing ? (
-        <span className="mono" style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+        <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
           {trailing}
         </span>
       ) : null}
       {chevron ? (
-        <span aria-hidden style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+        <span aria-hidden style={{ fontSize: 11, color: "var(--text-disabled)" }}>
           {chevron === "open" ? "▾" : "▸"}
         </span>
       ) : null}
@@ -105,7 +105,7 @@ export function StageHeader({
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 300, lineHeight: "22px" }}>
+          <div style={{ fontSize: 22, fontWeight: 300, lineHeight: "26px" }}>
             {target ? (
               <>
                 {target} <span style={{ color: "var(--text-disabled)" }}>brief</span>
@@ -114,7 +114,7 @@ export function StageHeader({
               "Cadence"
             )}
           </div>
-          <div style={{ fontSize: 12, color: "var(--text-disabled)", marginTop: 3 }}>
+          <div style={{ fontSize: 14, color: "var(--text-disabled)", marginTop: 3 }}>
             {target ? `Comparing on ${axis ?? "pricing"}` : "Competitive intelligence, on demand"}
           </div>
         </div>
@@ -122,7 +122,7 @@ export function StageHeader({
         <span
           className="mono"
           style={{
-            fontSize: 10,
+            fontSize: 11,
             padding: "3px 8px",
             borderRadius: 9999,
             whiteSpace: "nowrap",
@@ -150,7 +150,7 @@ export function StageHeader({
               />
               <div
                 style={{
-                  fontSize: 9,
+                  fontSize: 11,
                   marginTop: 5,
                   textTransform: "uppercase",
                   letterSpacing: "0.04em",
@@ -216,12 +216,12 @@ export function CrewTimeline({
                 }}
               />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.3 }}>
+                <div style={{ fontSize: 15, fontWeight: 500, lineHeight: 1.3 }}>
                   {member.agent}
                 </div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     lineHeight: 1.5,
                     color: "var(--text-disabled)",
                   }}
@@ -243,7 +243,7 @@ export function CrewTimeline({
                     >
                       <span
                         className="mono"
-                        style={{ fontSize: 9, color: "var(--text-disabled)" }}
+                        style={{ fontSize: 11, color: "var(--text-disabled)" }}
                         title={tools.names.join(", ")}
                       >
                         {tools.count} {tools.count === 1 ? "tool call" : "tool calls"}
@@ -252,7 +252,7 @@ export function CrewTimeline({
                         <span
                           className="mono"
                           style={{
-                            fontSize: 8,
+                            fontSize: 10,
                             padding: "1px 5px",
                             borderRadius: 9999,
                             background: "var(--white-65)",
@@ -287,7 +287,7 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
   const color = threatColor(value);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontSize: 11, color: "var(--text-secondary)", width: 92, flexShrink: 0 }}>
+      <span style={{ fontSize: 13, color: "var(--text-secondary)", width: 92, flexShrink: 0 }}>
         {label}
       </span>
       <div style={{ display: "flex", gap: 3, flex: 1 }}>
@@ -303,7 +303,7 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
           />
         ))}
       </div>
-      <span className="mono" style={{ fontSize: 10, color: "var(--text-disabled)", width: 22 }}>
+      <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)", width: 22 }}>
         {value || "–"}/5
       </span>
     </div>
@@ -322,7 +322,7 @@ export function ScorecardPanel({ card }: { card: Scorecard }) {
       </div>
       <p
         style={{
-          fontSize: 10,
+          fontSize: 11,
           color: "var(--text-disabled)",
           margin: "10px 4px 0",
           lineHeight: 1.5,
@@ -359,7 +359,7 @@ export function FindingsPanel({
               <div
                 className="mono"
                 style={{
-                  fontSize: 9,
+                  fontSize: 11,
                   color: "var(--text-disabled)",
                   marginBottom: 2,
                   overflowWrap: "anywhere",
@@ -367,7 +367,7 @@ export function FindingsPanel({
               >
                 {finding.source}
               </div>
-              <div style={{ fontSize: 12, lineHeight: 1.55 }}>{finding.claim}</div>
+              <div style={{ fontSize: 14, lineHeight: 1.55 }}>{finding.claim}</div>
             </div>
           ))}
         </div>
@@ -393,7 +393,7 @@ function CopyButton({ text }: { text: string }) {
       }}
       className="mono"
       style={{
-        fontSize: 10,
+        fontSize: 11,
         padding: "3px 8px",
         borderRadius: 9999,
         border: "1px solid var(--border-container)",
@@ -440,7 +440,7 @@ export function BriefDoc({
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <span
           style={{
-            fontSize: 10,
+            fontSize: 11,
             textTransform: "uppercase",
             letterSpacing: "0.05em",
             color: "var(--text-secondary)",
@@ -449,7 +449,7 @@ export function BriefDoc({
           Brief
         </span>
         <div style={{ flex: 1, height: 1, background: "var(--border-container)" }} />
-        <span className="mono" style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+        <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
           {done}/{sections.length} sections
         </span>
         {done === sections.length ? <CopyButton text={markdown} /> : null}
@@ -459,8 +459,8 @@ export function BriefDoc({
         {verdict ? (
           <p
             style={{
-              fontSize: 15,
-              lineHeight: "24px",
+              fontSize: 17,
+              lineHeight: "30px",
               margin: "0 0 22px",
               paddingLeft: 12,
               borderLeft: "2px solid var(--text-primary)",
@@ -477,15 +477,15 @@ export function BriefDoc({
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
                 <span
                   className="mono"
-                  style={{ fontSize: 10, color: "var(--text-disabled)", flexShrink: 0 }}
+                  style={{ fontSize: 11, color: "var(--text-disabled)", flexShrink: 0 }}
                 >
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <h3 style={{ fontSize: 17, fontWeight: 600, lineHeight: "23px", margin: 0 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 600, lineHeight: "28px", margin: 0 }}>
                   {section.title}
                 </h3>
                 {section.status === "writing" ? (
-                  <span className="mono" style={{ fontSize: 10, color: "#FFAC4D" }}>
+                  <span className="mono" style={{ fontSize: 11, color: "#FFAC4D" }}>
                     writing…
                   </span>
                 ) : null}
@@ -519,30 +519,6 @@ export function BriefDoc({
   );
 }
 
-/** Shown while the crew researches, in place of a brief skeleton.
- *
- * Deliberately not a skeleton. Research runs ~25s, and a skeleton is a promise
- * about *when* — hold one that long and it reads as a layout that failed to load
- * rather than as anticipation. There is honest progress to show instead (agent
- * activity, evidence landing one item at a time), so we show that and let the
- * brief panel stay absent until it has real content.
- */
-export function ResearchProgress({ findingCount }: { findingCount: number }) {
-  return (
-    <div className="glass" style={{ padding: 20, zIndex: 1, position: "relative" }}>
-      <SectionTitle
-        title="Researching"
-        trailing={findingCount ? `${findingCount} found` : "gathering"}
-      />
-      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 4px", maxWidth: "60ch" }}>
-        {findingCount
-          ? `${findingCount} sourced ${findingCount === 1 ? "finding" : "findings"} so far. The brief appears once the outline is approved.`
-          : "The crew is reading pricing pages, docs and reviews. Findings appear here as they land."}
-      </p>
-    </div>
-  );
-}
-
 export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   const prompts = [
     "Brief me on Pulsegrid's pricing vs ours",
@@ -553,15 +529,15 @@ export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <div className="glass" style={{ padding: 24, zIndex: 1, position: "relative" }}>
       <SectionTitle title="What this demo shows" />
-      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 4px 6px", maxWidth: "64ch" }}>
+      <p style={{ fontSize: 16, lineHeight: "26px", margin: "0 4px 6px", maxWidth: "64ch" }}>
         A three-agent CrewAI crew researches a competitor, an analyst scores them, the
         run pauses for your approval, then a writer fills in the brief section by
         section. Every step streams over AG-UI.
       </p>
       <p
         style={{
-          fontSize: 12,
-          lineHeight: "18px",
+          fontSize: 14,
+          lineHeight: "20px",
           margin: "0 4px 16px",
           color: "var(--text-disabled)",
           maxWidth: "64ch",
@@ -579,7 +555,7 @@ export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
               alignItems: "center",
               gap: 8,
               textAlign: "left",
-              fontSize: 13,
+              fontSize: 15,
               padding: "10px 12px",
               borderRadius: 4,
               border: "1px solid transparent",
@@ -597,10 +573,10 @@ export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
               e.currentTarget.style.borderColor = "transparent";
             }}
           >
-            <span aria-hidden style={{ color: "var(--text-disabled)", fontSize: 12 }}>
+            <span aria-hidden style={{ color: "var(--text-disabled)", fontSize: 14 }}>
               →
             </span>
-            <span style={{ fontSize: 13 }}>{prompt}</span>
+            <span style={{ fontSize: 15 }}>{prompt}</span>
           </button>
         ))}
       </div>

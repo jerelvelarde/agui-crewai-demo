@@ -11,7 +11,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    // `dark` is what switches CopilotKit's own chat styles to their dark set.
+    <html lang="en" className="dark">
       <head>
         {/* Tailwind v4 rejects @import url() in CSS, so fonts load here. */}
         <link

@@ -17,7 +17,6 @@ import {
   CrewTimeline,
   EmptyState,
   FindingsPanel,
-  ResearchProgress,
   ScorecardPanel,
   StageHeader,
 } from "./panels";
@@ -54,19 +53,21 @@ function ApprovalCard({
 
   return (
     <div
-      className="glass"
       style={{
-        padding: "18px 20px",
-        zIndex: 2,
-        position: "relative",
+        padding: "16px 18px",
+        margin: "6px 0",
+        borderRadius: 10,
         background: "var(--surface-container)",
-        border: "2px solid var(--text-primary)",
+        // The agent is the one asking, so the card is outlined in the agent's
+        // own voice rather than in a loud neutral border.
+        border: "1px solid var(--agent)",
+        boxShadow: "0 0 0 3px rgba(190, 194, 255, 0.06)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <span
           style={{
-            fontSize: 10,
+            fontSize: 11,
             textTransform: "uppercase",
             letterSpacing: "0.05em",
             fontWeight: 600,
@@ -75,12 +76,12 @@ function ApprovalCard({
           Approval required
         </span>
         <div style={{ flex: 1, height: 1, background: "var(--border-container)" }} />
-        <span className="mono" style={{ fontSize: 10, color: "var(--text-disabled)" }}>
+        <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
           run paused
         </span>
       </div>
 
-      <p style={{ fontSize: 14, lineHeight: "22px", margin: "0 0 14px", maxWidth: "64ch" }}>
+      <p style={{ fontSize: 16, lineHeight: "26px", margin: "0 0 14px", maxWidth: "56ch" }}>
         {interrupt?.message ?? "Approve this outline?"}
       </p>
 
@@ -93,18 +94,17 @@ function ApprovalCard({
             display: "flex",
             flexDirection: "column",
             gap: 7,
-            maxWidth: "68ch",
           }}
         >
           {items.map((item, index) => (
             <li key={index} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
               <span
                 className="mono"
-                style={{ fontSize: 10, color: "var(--text-disabled)", flexShrink: 0 }}
+                style={{ fontSize: 11, color: "var(--text-disabled)", flexShrink: 0 }}
               >
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+              <span style={{ fontSize: 15, lineHeight: 1.5 }}>
                 {item.replace(/^\s*\d+[.)]\s*/, "")}
               </span>
             </li>
@@ -114,7 +114,7 @@ function ApprovalCard({
         <pre
           className="mono"
           style={{
-            fontSize: 12,
+            fontSize: 14,
             lineHeight: 1.6,
             margin: "0 0 18px",
             padding: 12,
@@ -140,9 +140,8 @@ function ApprovalCard({
         }}
         style={{
           width: "100%",
-          maxWidth: 520,
-          height: 34,
-          fontSize: 13,
+          height: 36,
+          fontSize: 15,
           padding: "0 12px",
           marginBottom: 12,
           borderRadius: 4,
@@ -153,14 +152,14 @@ function ApprovalCard({
         }}
       />
 
-      <div style={{ display: "flex", gap: 8, maxWidth: 520 }}>
+      <div style={{ display: "flex", gap: 8 }}>
         <button
           disabled={sent}
           onClick={() => send(note.trim() ? note.trim() : options[0])}
           style={{
             flex: 1,
-            height: 34,
-            fontSize: 13,
+            height: 36,
+            fontSize: 15,
             fontWeight: 500,
             border: "none",
             borderRadius: 8,
@@ -178,8 +177,8 @@ function ApprovalCard({
           onClick={() => send(options[1] ?? "revise")}
           style={{
             flex: 1,
-            height: 34,
-            fontSize: 13,
+            height: 36,
+            fontSize: 15,
             fontWeight: 500,
             borderRadius: 8,
             border: "1px solid var(--border-container)",
@@ -226,10 +225,10 @@ function WorkspaceInner({ agent }: { agent: any }) {
   const state = (agent?.state ?? {}) as BriefState;
   const stage: Stage = state.stage ?? "idle";
 
-  // renderInChat: false so the approval card lands in the canvas beside the
-  // outline it is about, rather than inside the chat transcript.
-  const approvalCard = useInterrupt({
-    renderInChat: false,
+  // Human-in-the-loop belongs in the conversation. The pause is the agent asking
+  // the user a question, so it renders in the transcript where the question was
+  // asked — not as a separate panel the user has to look away to find.
+  useInterrupt({
     render: ({ interrupt, resolve }: any) => (
       <ApprovalCard interrupt={interrupt} resolve={resolve} />
     ),
@@ -238,36 +237,30 @@ function WorkspaceInner({ agent }: { agent: any }) {
   const findings = state.findings ?? [];
   const verdict = state.scorecard?.verdict;
   const written = (state.sections ?? []).some((section) => (section.body ?? "").trim());
+  const started = Boolean(state.target) || (state.crew?.length ?? 0) > 0;
 
-  // One derived view, not stored. An earlier version tracked layout in state set
-  // from several places and the columns disagreed with each other mid-run; a
-  // single derivation from the run's own state removes that whole class of bug.
-  const view: "idle" | "research" | "approval" | "brief" = !(
-    state.target || (state.crew?.length ?? 0) > 0
-  )
-    ? "idle"
-    : approvalCard
-      ? "approval"
-      : written
-        ? "brief"
-        : "research";
+  // The canvas opens when there is an insight to present, not when the request
+  // starts. Until the Analyst has scored something there is nothing to put in it,
+  // and an empty panel full of skeletons reads as a layout that failed to load.
+  // Progress during that window lives in the chat, where it is real: reasoning,
+  // and a card per agent being tasked.
+  const canvasOpen = Boolean(state.scorecard) || written;
 
   const send = (prompt: string) => {
     void agent?.addMessage?.({ id: crypto.randomUUID(), role: "user", content: prompt });
     // Drive through copilotkit, not agent.runAgent(): the raw agent method runs
-    // without the tools and renderers registered by hooks, so the run would
-    // proceed with no task cards and no interrupt handling.
+    // without the tools and renderers registered by hooks.
     void copilotkit?.runAgent?.({ agent });
   };
 
   const rail = (
     <div
       style={{
-        flex: "0 1 330px",
-        minWidth: 260,
+        flex: "0 1 380px",
+        minWidth: 300,
         display: "flex",
         flexDirection: "column",
-        gap: 8,
+        gap: 10,
       }}
     >
       <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
@@ -280,88 +273,77 @@ function WorkspaceInner({ agent }: { agent: any }) {
     <>
       <AgentTaskRenderer />
 
-      {/* Canvas */}
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          overflowY: "auto",
-          maxHeight: "calc(100vh - 16px)",
-        }}
-      >
-        <StageHeader stage={stage} target={state.target} axis={state.axis} />
+      {canvasOpen ? (
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            overflowY: "auto",
+            maxHeight: "calc(100vh - 20px)",
+          }}
+        >
+          <StageHeader stage={stage} target={state.target} axis={state.axis} />
 
-        {view === "idle" ? <EmptyState onPick={send} /> : null}
-
-        {/* Research: one centred column. No brief panel and no skeleton of one —
-            the brief does not exist yet, so nothing stands in for it. */}
-        {view === "research" ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              maxWidth: 760,
-              width: "100%",
-              margin: "0 auto",
-            }}
-          >
-            <ResearchProgress findingCount={findings.length} />
-            <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
-            {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
-            <FindingsPanel findings={findings} defaultOpen />
-          </div>
-        ) : null}
-
-        {/* Approval and brief: the decision or the deliverable takes the primary
-            column, evidence moves to the rail. */}
-        {view === "approval" || view === "brief" ? (
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flexWrap: "wrap" }}>
-            <div
-              style={{
-                flex: "1 1 560px",
-                minWidth: 0,
-                maxWidth: 860,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              {approvalCard}
-              {view === "brief" ? (
+          {written ? (
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 620px", minWidth: 0, maxWidth: 1000 }}>
                 <BriefDoc
                   sections={state.sections ?? []}
                   target={state.target}
                   verdict={verdict}
                 />
-              ) : null}
+              </div>
+              {rail}
             </div>
-            {rail}
-          </div>
-        ) : null}
-      </div>
+          ) : (
+            /* Analysis is in, the brief is not written yet: present the insight
+               itself rather than a placeholder for the document. */
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 860 }}>
+              {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
+              <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
+              <FindingsPanel findings={findings} defaultOpen />
+            </div>
+          )}
+        </div>
+      ) : null}
 
-      {/* Copilot */}
+      {/* One chat, two boxes. The component never unmounts across the layout
+          change — only the box around it changes width — so the conversation and
+          its scroll position survive the canvas opening. */}
       <div
-        className="glass"
         style={{
-          width: 420,
+          width: canvasOpen ? 460 : "min(880px, 100%)",
+          margin: canvasOpen ? undefined : "0 auto",
           flexShrink: 0,
           zIndex: 1,
           position: "relative",
-          overflow: "hidden",
-          height: "calc(100vh - 16px)",
+          height: "calc(100vh - 20px)",
           display: "flex",
           flexDirection: "column",
+          gap: 10,
+          transition: "width 240ms ease",
         }}
       >
-        {/* flex:1 + min-width:0 are load-bearing. Without them this flex child
-            shrinks to min-content and the chat wraps one character per line. */}
+        {!canvasOpen ? (
+          <>
+            <StageHeader stage={stage} target={state.target} axis={state.axis} />
+            {!started ? <EmptyState onPick={send} /> : null}
+          </>
+        ) : null}
+
         <div
-          style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}
+          className="glass"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
         >
           <CopilotChat
             // Object slots merge over the bound props. Nobody copies an agent's
@@ -370,8 +352,8 @@ function WorkspaceInner({ agent }: { agent: any }) {
             messageView={{ assistantMessage: { toolbarVisible: false } }}
             labels={{
               welcomeMessageText:
-                "Ask me for a competitive brief — try “brief me on Pulsegrid’s pricing vs ours”.",
-              chatInputPlaceholder: "Ask for a brief…",
+                "Ask me for a competitive brief \u2014 try \u201cbrief me on Pulsegrid\u2019s pricing vs ours\u201d.",
+              chatInputPlaceholder: "Ask for a brief\u2026",
             }}
           />
         </div>
@@ -393,8 +375,8 @@ export function Workspace() {
         overflow: "hidden",
         minHeight: "100vh",
         display: "flex",
-        gap: 8,
-        padding: 8,
+        gap: 10,
+        padding: 10,
       }}
     >
       <BlurCircles />
