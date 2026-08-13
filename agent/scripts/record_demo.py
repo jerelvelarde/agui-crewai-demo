@@ -112,7 +112,9 @@ def main() -> int:
         page.wait_for_function(
             "() => document.body.innerText.includes('Complete')", timeout=600000
         )
-        beat("Brief written — 5/5 sections")
+        # The Analyst proposes the outline, so the section count varies per run.
+        written = page.locator("text=/\\d+\\/\\d+ sections/").first.inner_text()
+        beat(f"Brief written — {written}")
         page.wait_for_timeout(2000)
 
         # Slow scroll through the finished brief so the writing is readable.

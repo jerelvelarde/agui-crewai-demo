@@ -15,7 +15,7 @@ one of the things 0.3.0 added.
 ```bash
 make install
 cp agent/.env.example agent/.env   # add your OPENAI_API_KEY
-make dev                           # agent :8008, web :3000
+make dev                           # agent :8008, web :3002
 ```
 
 Then ask: **“brief me on Pulsegrid's pricing vs ours”**.
@@ -48,6 +48,26 @@ Two endpoints, on purpose:
   `conversational = True` installs CrewAI's own conversational graph in place of
   a hand-authored one, so it cannot host the brief pipeline. It gets its own
   endpoint where it is the actual subject rather than a flag on something else.
+
+## The interface
+
+Two states, and the second one only arrives when it has earned its place.
+
+**Idle** is a hero: one headline, one line of copy, the composer, three things to
+try. **Working** keeps the run in the conversation — reasoning, a card per agent
+as it is tasked, the pipeline itself as an inline component, and the approval
+pause rendered where the agent asked the question. The canvas stays closed until
+the Analyst has actually scored something; a panel of skeletons during a 20-second
+research phase reads as a layout that failed to load, not as anticipation.
+
+Surface is `#010507`, CopilotKit's approved dark brand context. Each accent has
+exactly one job, so a colour on screen means something: `--agent` lilac is the
+agent's own voice, and the scorecard's red/orange/mint is threat level, never
+decoration.
+
+Both marks are the shipped assets rather than traced approximations — the
+CopilotKit lockup with its wordmark reversed for a near-black surface, and the
+crewAI mark as crewAI publishes it (they serve one file for both light and dark).
 
 ## Evidence, not assertions
 
@@ -137,4 +157,14 @@ agent/    Python 3.12 · uv · FastAPI · ag-ui-crewai · crewai
   corpus/              committed competitor data
   scripts/             verify_stream.py
 web/      Next.js 16 · CopilotKit 1.67.1 · Tailwind 4
+  app/
+    components/
+      workspace.tsx    layout, interrupt, tool renderer
+      panels.tsx       hero, brand bar, inline pipeline, scorecard, brief
+      agent-tasks.tsx  attribution store → one card per agent tasked
 ```
+
+## Licence
+
+MIT. The CopilotKit and crewAI logos are their owners' trademarks and are
+included for attribution in a joint demo, not licensed under the MIT grant.

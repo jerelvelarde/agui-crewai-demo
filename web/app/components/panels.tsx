@@ -77,8 +77,16 @@ const STAGE_LABEL: Record<Stage, string> = {
   done: "Complete",
 };
 
-/** Sticky header: what we are working on, and how far along it is. */
-export function StageHeader({
+/** The pipeline, inline in the transcript.
+ *
+ * This was a sticky panel above the chat, which meant the run narrated itself in
+ * two places: a floating header for the stage, and the log for everything else.
+ * It renders as the intake tool's own component instead — identifying the target
+ * IS the first step, so the card that reports it is the right place to show how
+ * far the rest of the pipeline has got. It sits on the same rail as the agent
+ * cards, so the log reads as one column.
+ */
+export function BriefPipelineCard({
   stage,
   target,
   axis,
@@ -89,42 +97,46 @@ export function StageHeader({
 }) {
   const activeIndex = STEPS.findIndex((s) => s.stage === stage);
   const waiting = stage === "awaiting_approval";
+  const done = stage === "done";
 
   return (
     <div
-      className="glass"
       style={{
-        padding: "14px 16px",
-        zIndex: 3,
-        position: "sticky",
-        top: 0,
-        // Sticky over translucent glass needs its own blur, or scrolled content
-        // shows through the header.
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        borderLeft: "1px solid var(--border-container)",
+        padding: "8px 0 10px 14px",
+        fontSize: 15,
+        position: "relative",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 22, fontWeight: 300, lineHeight: "26px" }}>
-            {target ? (
-              <>
-                {target} <span style={{ color: "var(--text-disabled)" }}>brief</span>
-              </>
-            ) : (
-              "Cadence"
-            )}
-          </div>
-          <div style={{ fontSize: 14, color: "var(--text-disabled)", marginTop: 3 }}>
-            {target ? `Comparing on ${axis ?? "pricing"}` : "Competitive intelligence, on demand"}
-          </div>
-        </div>
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: -4,
+          top: 13,
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          background: done ? "var(--text-primary)" : "var(--agent)",
+          outline: "3px solid var(--surface-chat)",
+        }}
+      />
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontWeight: 600 }}>
+          {target ? `${target} brief` : "Cadence"}
+        </span>
+        {target ? (
+          <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
+            {axis ?? "pricing"}
+          </span>
+        ) : null}
         <span style={{ flex: 1 }} />
         <span
           className="mono"
           style={{
             fontSize: 11,
-            padding: "3px 8px",
+            padding: "2px 7px",
             borderRadius: 9999,
             whiteSpace: "nowrap",
             background: waiting ? "var(--text-primary)" : "var(--white-65)",
@@ -136,7 +148,7 @@ export function StageHeader({
         </span>
       </div>
 
-      <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
+      <div style={{ display: "flex", gap: 5, marginTop: 12 }}>
         {STEPS.map((step, index) => {
           const reached = activeIndex >= index && activeIndex !== -1;
           const current = activeIndex === index;
@@ -144,22 +156,24 @@ export function StageHeader({
             <div key={step.stage} style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
-                  height: 3,
+                  height: 2,
                   borderRadius: 9999,
                   background: reached ? "var(--text-primary)" : "var(--border-container)",
                 }}
               />
               <div
+                className="mono"
                 style={{
-                  fontSize: 11,
+                  fontSize: 10,
                   marginTop: 5,
-                  textTransform: "uppercase",
                   letterSpacing: "0.04em",
                   color: current ? "var(--text-primary)" : "var(--text-disabled)",
-                  fontWeight: current ? 600 : 400,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {step.label}
+                {step.label.toLowerCase()}
               </div>
             </div>
           );

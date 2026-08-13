@@ -15,12 +15,12 @@ import { BlurCircles } from "./blur-circles";
 import {
   BrandBar,
   BriefDoc,
+  BriefPipelineCard,
   CrewTimeline,
   FindingsPanel,
   Hero,
   HeroSuggestions,
   ScorecardPanel,
-  StageHeader,
 } from "./panels";
 
 /** The outline-approval card.
@@ -198,6 +198,24 @@ function ApprovalCard({
   );
 }
 
+/** Reads its own state so the tool renderer below can stay a stable closure —
+ *  re-registering the renderer on every state change would remount the cards. */
+function InlinePipeline() {
+  const { agent } = useAgent({
+    agentId: "brief",
+    updates: [UseAgentUpdate.OnStateChanged],
+  });
+  const state = (agent?.state ?? {}) as BriefState;
+
+  return (
+    <BriefPipelineCard
+      stage={state.stage ?? "intake"}
+      target={state.target}
+      axis={state.axis}
+    />
+  );
+}
+
 /** Registers the wildcard tool renderer. Must live inside AgentTaskProvider so
  *  each call can register itself and let the group leader draw one card. */
 function AgentTaskRenderer() {
@@ -205,15 +223,20 @@ function AgentTaskRenderer() {
 
   useDefaultRenderTool(
     {
-      render: ({ name, toolCallId, parameters, status, result }) => (
-        <AgentTaskCard
+      render: ({ name, toolCallId, parameters, status, result }) =>
+        // Naming the target is the pipeline's first step, so this one call
+        // renders as the pipeline itself rather than as another log row.
+        name === "set_brief_target" ? (
+          <InlinePipeline />
+        ) : (
+          <AgentTaskCard
             toolCallId={toolCallId}
             name={name}
             parameters={parameters}
             status={status}
-          result={result}
-        />
-      ),
+            result={result}
+          />
+        ),
     },
     [store],
   );
@@ -292,8 +315,6 @@ function WorkspaceInner({ agent }: { agent: any }) {
             maxHeight: "100%",
           }}
         >
-          <StageHeader stage={stage} target={state.target} axis={state.axis} />
-
           {written ? (
             <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 620px", minWidth: 0, maxWidth: 1000 }}>
@@ -338,9 +359,6 @@ function WorkspaceInner({ agent }: { agent: any }) {
         }}
       >
         {idle ? <Hero /> : null}
-        {!canvasOpen && !idle ? (
-          <StageHeader stage={stage} target={state.target} axis={state.axis} />
-        ) : null}
 
         <div
           // No panel chrome at idle: the composer is already a rounded control,
