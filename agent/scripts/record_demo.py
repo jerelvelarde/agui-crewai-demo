@@ -7,8 +7,8 @@ captions or titles: this is raw footage meant to be narrated or titled in post.
 It prints a chapter list with timestamps relative to the start of the recording,
 so the dead air while the crew works is easy to find and trim.
 
-    python scripts/record_demo.py                    # needs web :3001 + agent :8008
-    python scripts/record_demo.py --url http://localhost:3000
+    python scripts/record_demo.py                    # needs web :3002 + agent :8008
+    python scripts/record_demo.py --url http://localhost:3000  # override if your port differs
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ PROMPT = "Brief me on Pulsegrid's pricing vs ours."
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", default="http://localhost:3001")
+    parser.add_argument("--url", default="http://localhost:3002")
     parser.add_argument("--prompt", default=PROMPT)
     parser.add_argument("--width", type=int, default=1920)
     parser.add_argument("--height", type=int, default=1080)
