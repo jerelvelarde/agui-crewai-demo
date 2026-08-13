@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import type { AgentActivity, Finding, Scorecard, Section, Stage } from "../lib/types";
 
@@ -519,67 +520,127 @@ export function BriefDoc({
   );
 }
 
-export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
-  const prompts = [
-    "Brief me on Pulsegrid's pricing vs ours",
-    "How does Beacon Analytics compare on governance?",
-    "Where is Telemetryx exposed?",
+/** Short enough to sit on one row under the composer — three pills that wrap to a
+ *  second line read as overflow rather than as a set of choices. */
+export const DEMO_PROMPTS = [
+  "Pulsegrid's pricing vs ours",
+  "Beacon Analytics on governance",
+  "Where is Telemetryx exposed?",
+];
+
+/** The persistent partner lockup.
+ *
+ * Both marks are the shipped assets, not traced approximations: the CopilotKit
+ * logotype is the brandbook lockup with the wordmark reversed for a near-black
+ * surface (its approved dark treatment), and the crewAI mark is the one crewAI
+ * itself serves for both light and dark. Clearspace is held by the gap, and both
+ * sit above the verified minimum sizes.
+ */
+export function BrandBar() {
+  const pills = [
+    { label: "crew · 3 agents", color: "var(--mint)" },
+    { label: "hitl · interrupt/resume", color: "var(--agent)" },
+    { label: "mcp + generative ui", color: "var(--orange)" },
   ];
 
   return (
-    <div className="glass" style={{ padding: 24, zIndex: 1, position: "relative" }}>
-      <SectionTitle title="What this demo shows" />
-      <p style={{ fontSize: 16, lineHeight: "26px", margin: "0 4px 6px", maxWidth: "64ch" }}>
-        A three-agent CrewAI crew researches a competitor, an analyst scores them, the
-        run pauses for your approval, then a writer fills in the brief section by
-        section. Every step streams over AG-UI.
-      </p>
-      <p
+    <header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        flexShrink: 0,
+        padding: "2px 6px",
+        zIndex: 1,
+        position: "relative",
+      }}
+    >
+      <Image
+        src="/copilotkit-logo-dark.svg"
+        alt="CopilotKit"
+        width={128}
+        height={25}
+        priority
+      />
+      <span className="mono" style={{ fontSize: 12, color: "var(--text-disabled)" }}>
+        ×
+      </span>
+      <Image src="/crewai-logo.png" alt="crewAI" width={79} height={24} priority />
+
+      <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+        {pills.map((pill) => (
+          <span
+            key={pill.label}
+            className="pill mono"
+            style={{ color: pill.color, borderColor: pill.color }}
+          >
+            {pill.label}
+          </span>
+        ))}
+      </span>
+    </header>
+  );
+}
+
+/** The idle screen: one headline, one line of explanation, the composer, and
+ *  three things to try. The previous version stacked a bordered "what this demo
+ *  shows" card on top of a bordered chat card on top of the chat's own welcome
+ *  headline — three nested boxes saying the same thing before anything had
+ *  happened. The hero replaces all of it, and the composer sits directly under
+ *  the copy it belongs to. */
+export function Hero() {
+  return (
+    <div style={{ textAlign: "center", padding: "0 16px" }}>
+      {/* Sized against the viewport rather than in fixed px: on a 16:9 recording
+          a fixed headline strands the hero in the middle of the frame. */}
+      <h1
         style={{
-          fontSize: 14,
-          lineHeight: "20px",
-          margin: "0 4px 16px",
-          color: "var(--text-disabled)",
-          maxWidth: "64ch",
+          fontSize: "clamp(40px, 4.4vw, 74px)",
+          lineHeight: 1.03,
+          fontWeight: 600,
+          letterSpacing: "-0.04em",
+          margin: "0 0 18px",
         }}
       >
-        Pick one to start, or type your own.
+        Brief me on any competitor
+      </h1>
+      <p
+        style={{
+          fontSize: "clamp(16px, 1.25vw, 21px)",
+          lineHeight: 1.5,
+          color: "var(--text-secondary)",
+          margin: "0 auto",
+          maxWidth: "44ch",
+        }}
+      >
+        A CrewAI crew researches, scores, and writes the brief — pausing for your
+        approval before it commits. Every step streams over AG-UI.
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {prompts.map((prompt) => (
-          <button
-            key={prompt}
-            onClick={() => onPick(prompt)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              textAlign: "left",
-              fontSize: 15,
-              padding: "10px 12px",
-              borderRadius: 4,
-              border: "1px solid transparent",
-              background: "var(--white-50)",
-              color: "var(--text-primary)",
-              cursor: "pointer",
-              font: "inherit",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--white-70)";
-              e.currentTarget.style.borderColor = "var(--border-container)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--white-50)";
-              e.currentTarget.style.borderColor = "transparent";
-            }}
-          >
-            <span aria-hidden style={{ color: "var(--text-disabled)", fontSize: 14 }}>
-              →
-            </span>
-            <span style={{ fontSize: 15 }}>{prompt}</span>
-          </button>
-        ))}
-      </div>
+    </div>
+  );
+}
+
+export function HeroSuggestions({ onPick }: { onPick: (prompt: string) => void }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        justifyContent: "center",
+        flexWrap: "wrap",
+        padding: "0 16px",
+      }}
+    >
+      {DEMO_PROMPTS.map((prompt) => (
+        <button
+          key={prompt}
+          onClick={() => onPick(prompt)}
+          className="pill mono suggestion"
+          style={{ background: "transparent", cursor: "pointer", font: "inherit" }}
+        >
+          {prompt}
+        </button>
+      ))}
     </div>
   );
 }

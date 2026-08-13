@@ -89,6 +89,37 @@ body {
     font-family: "Spline Sans Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+/* CopilotKit's chat paints its own neutral near-black, which reads as a lighter
+   band against #010507. Let it be transparent and inherit whatever it sits in —
+   the glass panel when docked, the page itself at idle. */
+.copilotKitChat { background: transparent !important; }
+
+/* At idle there is nothing to scroll, so the scrim behind the composer is just a
+   rectangle around a rounded control. It stays in place everywhere else, where
+   messages do scroll under the input. */
+.hero-composer div:has(> div > .copilotKitInput) { background: transparent !important; }
+
+/* Mono pill — capability tags in the brand bar and the idle suggestions. Mono is
+   the brand's technical-annotation face, so it stays on labels like these and off
+   reading copy. */
+.pill {
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    padding: 5px 11px;
+    border-radius: 9999px;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    background: transparent;
+    white-space: nowrap;
+}
+
+.suggestion { transition: background 140ms ease, border-color 140ms ease; }
+.suggestion:hover {
+    background: var(--white-70) !important;
+    border-color: var(--text-disabled);
+    color: var(--text-primary);
+}
+
 .brief-body p { margin: 0 0 14px; font-size: 16px; line-height: 26px; color: var(--text-primary); }
 .brief-body p:last-child { margin-bottom: 0; }
 

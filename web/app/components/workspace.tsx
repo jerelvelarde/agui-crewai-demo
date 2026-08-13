@@ -13,10 +13,12 @@ import type { BriefState, Stage } from "../lib/types";
 import { AgentTaskCard, AgentTaskProvider, useAgentTasks } from "./agent-tasks";
 import { BlurCircles } from "./blur-circles";
 import {
+  BrandBar,
   BriefDoc,
   CrewTimeline,
-  EmptyState,
   FindingsPanel,
+  Hero,
+  HeroSuggestions,
   ScorecardPanel,
   StageHeader,
 } from "./panels";
@@ -246,6 +248,11 @@ function WorkspaceInner({ agent }: { agent: any }) {
   // and a card per agent being tasked.
   const canvasOpen = Boolean(state.scorecard) || written;
 
+  // Idle is its own screen, not a stripped-down version of the working one: a
+  // hero and a composer, no stage rail with five inert steps and no panel
+  // chrome around a chat that has nothing in it yet.
+  const idle = !started && !canvasOpen;
+
   const send = (prompt: string) => {
     void agent?.addMessage?.({ id: crypto.randomUUID(), role: "user", content: prompt });
     // Drive through copilotkit, not agent.runAgent(): the raw agent method runs
@@ -282,7 +289,7 @@ function WorkspaceInner({ agent }: { agent: any }) {
             flexDirection: "column",
             gap: 10,
             overflowY: "auto",
-            maxHeight: "calc(100vh - 20px)",
+            maxHeight: "100%",
           }}
         >
           <StageHeader stage={stage} target={state.target} axis={state.axis} />
@@ -320,24 +327,27 @@ function WorkspaceInner({ agent }: { agent: any }) {
           flexShrink: 0,
           zIndex: 1,
           position: "relative",
-          height: "calc(100vh - 20px)",
+          height: "100%",
           display: "flex",
           flexDirection: "column",
-          gap: 10,
+          // Idle centres hero + composer + suggestions as one group; working
+          // pins the transcript to full height.
+          justifyContent: idle ? "center" : undefined,
+          gap: idle ? 26 : 10,
           transition: "width 240ms ease",
         }}
       >
-        {!canvasOpen ? (
-          <>
-            <StageHeader stage={stage} target={state.target} axis={state.axis} />
-            {!started ? <EmptyState onPick={send} /> : null}
-          </>
+        {idle ? <Hero /> : null}
+        {!canvasOpen && !idle ? (
+          <StageHeader stage={stage} target={state.target} axis={state.axis} />
         ) : null}
 
         <div
-          className="glass"
+          // No panel chrome at idle: the composer is already a rounded control,
+          // so a card around it just draws a second box.
+          className={idle ? "hero-composer" : "glass"}
           style={{
-            flex: 1,
+            flex: idle ? "0 0 auto" : 1,
             minHeight: 0,
             minWidth: 0,
             display: "flex",
@@ -351,12 +361,15 @@ function WorkspaceInner({ agent }: { agent: any }) {
             // the main source of visual noise in the rail.
             messageView={{ assistantMessage: { toolbarVisible: false } }}
             labels={{
-              welcomeMessageText:
-                "Ask me for a competitive brief \u2014 try \u201cbrief me on Pulsegrid\u2019s pricing vs ours\u201d.",
+              // The hero is the welcome now. Leaving this set printed the same
+              // sentence twice, once as a headline and once inside the chat.
+              welcomeMessageText: "",
               chatInputPlaceholder: "Ask for a brief\u2026",
             }}
           />
         </div>
+
+        {idle ? <HeroSuggestions onPick={send} /> : null}
       </div>
     </>
   );
@@ -373,16 +386,22 @@ export function Workspace() {
       style={{
         position: "relative",
         overflow: "hidden",
-        minHeight: "100vh",
+        height: "100vh",
         display: "flex",
+        flexDirection: "column",
         gap: 10,
         padding: 10,
       }}
     >
       <BlurCircles />
-      <AgentTaskProvider agent={agent as any}>
-        <WorkspaceInner agent={agent} />
-      </AgentTaskProvider>
+      {/* The partner lockup stays on screen for the whole run — this is a
+          CopilotKit × crewAI demo in every state, not only at the title card. */}
+      <BrandBar />
+      <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 10 }}>
+        <AgentTaskProvider agent={agent as any}>
+          <WorkspaceInner agent={agent} />
+        </AgentTaskProvider>
+      </div>
     </div>
   );
 }
