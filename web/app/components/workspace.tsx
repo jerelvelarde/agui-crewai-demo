@@ -315,7 +315,7 @@ function WorkspaceInner({ agent }: { agent: any }) {
           its scroll position survive the canvas opening. */}
       <div
         style={{
-          width: canvasOpen ? 460 : "min(880px, 100%)",
+          width: canvasOpen ? 460 : "min(1040px, 100%)",
           margin: canvasOpen ? undefined : "0 auto",
           flexShrink: 0,
           zIndex: 1,

@@ -31,8 +31,14 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://localhost:3002")
     parser.add_argument("--prompt", default=PROMPT)
-    parser.add_argument("--width", type=int, default=1920)
-    parser.add_argument("--height", type=int, default=1080)
+    # Record a laptop-sized viewport, deliver 1080p. Filming a 1920-wide viewport
+    # is what made the first cut look small: the app is measured for reading, so a
+    # centred column on a 1920 canvas leaves half the frame empty. A 1440 viewport
+    # at 2x, scaled up to 1080p on the way out, fills the frame and stays crisp.
+    parser.add_argument("--width", type=int, default=1440)
+    parser.add_argument("--height", type=int, default=810)
+    parser.add_argument("--out-width", type=int, default=1920)
+    parser.add_argument("--out-height", type=int, default=1080)
     args = parser.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -56,7 +62,7 @@ def main() -> int:
             viewport=viewport,
             record_video_dir=str(raw_dir),
             record_video_size=viewport,
-            device_scale_factor=1,
+            device_scale_factor=2,
         )
         page = context.new_page()
 
@@ -139,6 +145,10 @@ def main() -> int:
         subprocess.run(
             [
                 "ffmpeg", "-y", "-i", str(final_webm),
+                # Playwright pads rather than upscales when record_video_size is
+                # larger than the viewport, so the scale to delivery size happens
+                # here. lanczos because this is text, not photography.
+                "-vf", f"scale={args.out_width}:{args.out_height}:flags=lanczos",
                 "-c:v", "libx264", "-preset", "slow", "-crf", "20",
                 "-pix_fmt", "yuv420p", "-movflags", "+faststart",
                 "-an", str(mp4),
