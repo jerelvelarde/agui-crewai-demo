@@ -15,6 +15,9 @@
     --surface-background: #080b0f;
     --surface-container: #0d1116;
     --surface-containerHovered: #141a21;
+    /* --white-50 composited over --surface-main. Needed as a flat value so the
+       chat's composer scrim can match its panel exactly. */
+    --surface-chat: #080c0e;
 
     /* Lines. Dark analogues of the glass idea rather than a copy of it —
        implementation defaults, not verified brand tokens. */
@@ -89,14 +92,30 @@ body {
     font-family: "Spline Sans Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
-/* CopilotKit's chat paints its own neutral near-black, which reads as a lighter
-   band against #010507. Let it be transparent and inherit whatever it sits in —
-   the glass panel when docked, the page itself at idle. */
-.copilotKitChat { background: transparent !important; }
+/* CopilotKit's chat, its message list, and every message paint their own neutral
+   near-black. Against #010507 that reads as a grey rectangle floating inside the
+   panel — the message list is a fixed 768px wide, so its edges are visible. Let
+   them all inherit whatever they sit in instead. */
+.copilotKitChat,
+.copilotKitMessages,
+.copilotKitMessage { background: transparent !important; }
 
-/* At idle there is nothing to scroll, so the scrim behind the composer is just a
-   rectangle around a rounded control. It stays in place everywhere else, where
-   messages do scroll under the input. */
+/* The docked chat panel is opaque rather than a translucent wash, because the
+   composer needs a scrim that matches the panel exactly: messages scroll under
+   the input, and a scrim one shade off is the same grey rectangle in miniature.
+   --surface-chat is the .glass wash over --surface-main, resolved. */
+.chat-panel {
+    background: var(--surface-chat);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+}
+
+.chat-panel div:has(> div > .copilotKitInput) {
+    background: var(--surface-chat) !important;
+}
+
+/* At idle there is nothing to scroll, so the scrim is just a rectangle around a
+   rounded control. */
 .hero-composer div:has(> div > .copilotKitInput) { background: transparent !important; }
 
 /* Mono pill — capability tags in the brand bar and the idle suggestions. Mono is

@@ -345,7 +345,7 @@ function WorkspaceInner({ agent }: { agent: any }) {
         <div
           // No panel chrome at idle: the composer is already a rounded control,
           // so a card around it just draws a second box.
-          className={idle ? "hero-composer" : "glass"}
+          className={idle ? "hero-composer" : "chat-panel"}
           style={{
             flex: idle ? "0 0 auto" : 1,
             minHeight: 0,
