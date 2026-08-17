@@ -1,4 +1,4 @@
-# Cadence — CopilotKit × CrewAI
+# CopilotKit × CrewAI
 
 A competitive-intelligence brief workspace built on [`ag-ui-crewai` 0.3.0](https://pypi.org/project/ag-ui-crewai/).
 
