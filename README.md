@@ -10,6 +10,27 @@ The point of the demo is that none of those capabilities are bolted on to show
 them off. Each one is there because the product needs it, and each happens to be
 one of the things 0.3.0 added.
 
+## The demo
+
+A single unedited run — 76 seconds, no captions, nothing sped up. The long
+stretch in the middle is the crew actually working.
+
+<video src="https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/cadence-demo.mp4" controls muted playsinline width="100%"></video>
+
+[Download the footage](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/cadence-demo.mp4)
+(`.mp4`, 8.5 MB — [`.webm`](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/cadence-demo.webm) also attached to the
+[`demo-footage`](https://github.com/jerelvelarde/agui-crewai-demo/releases/tag/demo-footage) release)
+
+| | |
+|---|---|
+| `00:06` | Prompt submitted |
+| `00:11` | Reasoning stream, before any tool runs |
+| `00:13` | Researcher tasked — tool calls stream into the chat |
+| `00:28` | Analyst scoring — MCP tool calls attributed on the crew panel |
+| `00:31` | **Run pauses** — approval required |
+| `00:38` | Approved — run resumes |
+| `01:03` | Brief written, 5/5 sections |
+
 ## Run it
 
 ```bash
