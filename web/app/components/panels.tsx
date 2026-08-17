@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+
+import { ThemeToggle } from "./theme-toggle";
 import { useState } from "react";
 import type { AgentActivity, Finding, Scorecard, Section, Stage } from "../lib/types";
 
@@ -572,9 +574,22 @@ export function BrandBar() {
         position: "relative",
       }}
     >
+      {/* Both treatments of the same lockup; CSS shows whichever the theme
+          calls for. The alt text lives on one of them so the pair is announced
+          once rather than twice. */}
       <Image
+        className="logo-dark"
         src="/copilotkit-logo-dark.svg"
         alt="CopilotKit"
+        width={128}
+        height={25}
+        priority
+      />
+      <Image
+        className="logo-light"
+        src="/copilotkit-logo-light.svg"
+        alt=""
+        aria-hidden
         width={128}
         height={25}
         priority
@@ -584,7 +599,7 @@ export function BrandBar() {
       </span>
       <Image src="/crewai-logo.png" alt="crewAI" width={79} height={24} priority />
 
-      <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+      <span style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
         {pills.map((pill) => (
           <span
             key={pill.label}
@@ -594,6 +609,7 @@ export function BrandBar() {
             {pill.label}
           </span>
         ))}
+        <ThemeToggle />
       </span>
     </header>
   );

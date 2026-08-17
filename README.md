@@ -86,6 +86,18 @@ exactly one job, so a colour on screen means something: `--agent` lilac is the
 agent's own voice, and the scorecard's red/orange/mint is threat level, never
 decoration.
 
+There is a light mode too — the toggle sits in the brand bar, and the choice
+persists. It is a second set of tokens, not a filter: no component knows a theme
+exists. Two things could not simply invert. The elevation washes were translucent
+whites lifting a card off near-black, which does nothing on white, so light uses
+plain white cards on a faintly tinted page and lets the border separate them. And
+the accents had to be re-tuned rather than reused: on white, dark-mode mint sits
+at 1.4:1 and lilac at 1.7:1, which is not a colour any more. Each keeps its hue
+and its one job but is darkened to carry it — `--agent` becomes `#6430AB`, the
+violet already in the CopilotKit kite, so the agent's voice stays a brand colour.
+Every accent clears 4.5:1 against the page, because these set pill text and not
+just the scorecard bars.
+
 Both marks are the shipped assets rather than traced approximations — the
 CopilotKit lockup with its wordmark reversed for a near-black surface, and the
 crewAI mark as crewAI publishes it (they serve one file for both light and dark).

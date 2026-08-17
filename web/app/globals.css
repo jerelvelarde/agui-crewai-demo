@@ -53,6 +53,12 @@
     --orange: #ffac4d;
     --red: #fa5f67;
 
+    /* Background glows. Alpha is per-theme: see html:not(.dark). */
+    --glow-lilac-strong: rgba(190, 194, 255, 0.055);
+    --glow-mint: rgba(133, 236, 206, 0.04);
+    --glow-lilac-soft: rgba(190, 194, 255, 0.03);
+    --glow-orange: rgba(255, 172, 77, 0.035);
+
     /* Each accent has exactly one semantic job, so a colour on screen means
        something. --agent is the agent's own voice; everything else is data. */
     --agent: var(--lilac);
@@ -81,6 +87,67 @@
     --ring: var(--agent);
 }
 
+/* Light mode.
+ *
+ * Keyed off the absence of the `dark` class rather than a separate data
+ * attribute, because that class is already what switches CopilotKit's own chat
+ * styles. One switch drives both, so the chat can never end up dark inside a
+ * light app. Dark stays the default: it is the approved brand context, and the
+ * class ships on <html>.
+ *
+ * Only tokens are redefined — no component knows a theme exists.
+ *
+ * Two things genuinely change rather than invert:
+ *
+ * The elevation washes were translucent whites lifting a card off a near-black
+ * page. Lifting off white does not work the same way: a wash light enough to
+ * read as elevation is invisible, so cards become plain white on a faintly grey
+ * page and the border does the separating.
+ *
+ * The accents cannot survive the swap literally. --lilac at #bec2ff and --mint
+ * at #85ecce are tuned for a dark ground and drop to roughly 1.3:1 on white,
+ * which is not a colour any more. Each keeps its hue and its one semantic job
+ * but is darkened to carry it: --agent becomes #6430AB, the violet already in
+ * the CopilotKit kite, so the agent's voice is still a brand colour and not an
+ * eyeballed one. */
+html:not(.dark) {
+    --surface-main: #fbfbfc;
+    --surface-background: #f4f5f7;
+    --surface-container: #ffffff;
+    --surface-containerHovered: #eef0f3;
+    --surface-chat: #ffffff;
+
+    --border-default: rgba(9, 15, 24, 0.13);
+    --border-container: rgba(9, 15, 24, 0.09);
+
+    --text-primary: #0d1116;
+    --text-secondary: #515b68;
+    --text-disabled: #697180;
+    --text-invert: #ffffff;
+
+    /* Cards are white on a grey page; the faint one is for chips, not panels. */
+    --white-50: #ffffff;
+    --white-70: #ffffff;
+    --white-65: rgba(9, 15, 24, 0.05);
+
+    /* Roughly 6x the dark alpha. Tinting white takes far more pigment than
+       tinting near-black, and at these values the glows still only register as
+       warmth in the corners rather than as lavender panels. */
+    --glow-lilac-strong: rgba(190, 194, 255, 0.34);
+    --glow-mint: rgba(133, 236, 206, 0.22);
+    --glow-lilac-soft: rgba(190, 194, 255, 0.2);
+    --glow-orange: rgba(255, 172, 77, 0.18);
+
+    /* Same hues, darkened until they read on white. These carry the scorecard
+       bars (graphical, 3:1) but also set the brand-bar pill text at 12px, so
+       they are tuned to the stricter 4.5:1 against the page: mint 4.5, orange
+       4.9, red 4.9, violet 8.0. The dark values would have been 1.4-3.0. */
+    --mint: #0e8465;
+    --lilac: #6430AB;
+    --orange: #a05f04;
+    --red: #d32b38;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -102,6 +169,24 @@ body {
 
 .mono {
     font-family: "Spline Sans Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* The logotype ships reversed for a near-black surface, so light needs the
+   wordmark in the brand's darkest grey instead. Both files render and CSS picks
+   one: no hydration mismatch, and no frame of the wrong mark on load. */
+html:not(.dark) .logo-dark,
+html.dark .logo-light { display: none; }
+
+/* A .pill that is also a button. */
+.theme-toggle {
+    cursor: pointer;
+    font-family: inherit;
+    line-height: inherit;
+}
+
+.theme-toggle:hover {
+    color: var(--text-primary);
+    border-color: var(--text-disabled);
 }
 
 /* CopilotKit's chat, its message list, and every message paint their own neutral
