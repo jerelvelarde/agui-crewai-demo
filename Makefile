@@ -1,4 +1,4 @@
-.PHONY: install agent web dev verify verify-multimodal test capabilities record
+.PHONY: install agent web dev verify verify-multimodal test capabilities record record-light
 
 install:
 	cd agent && uv venv --python 3.12 .venv && uv pip install -e . && uv pip install pytest httpx
@@ -33,3 +33,8 @@ verify-multimodal:
 # Records the demo running as 1080p footage into docs/video/ (needs both servers up).
 record:
 	cd agent && .venv/bin/python scripts/record_demo.py
+
+# Same run, filmed in light mode. Writes cadence-demo-light.* so it never
+# overwrites the dark cut.
+record-light:
+	cd agent && .venv/bin/python scripts/record_demo.py --theme light

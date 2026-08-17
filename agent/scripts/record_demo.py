@@ -8,6 +8,7 @@ It prints a chapter list with timestamps relative to the start of the recording,
 so the dead air while the crew works is easy to find and trim.
 
     python scripts/record_demo.py                    # needs web :3000 + agent :8008
+    python scripts/record_demo.py --theme light      # the light cut, as cadence-demo-light
     python scripts/record_demo.py --url http://localhost:3100  # override if your port differs
 """
 
@@ -39,7 +40,21 @@ def main() -> int:
     parser.add_argument("--height", type=int, default=810)
     parser.add_argument("--out-width", type=int, default=1920)
     parser.add_argument("--out-height", type=int, default=1080)
+    parser.add_argument(
+        "--theme",
+        choices=("dark", "light"),
+        default="dark",
+        help="Which theme to film. Dark is the app's default.",
+    )
+    parser.add_argument(
+        "--name",
+        default=None,
+        help="Output basename. Defaults to cadence-demo, or cadence-demo-light "
+        "for --theme light, so the two cuts never overwrite each other.",
+    )
     args = parser.parse_args()
+
+    name = args.name or ("cadence-demo" if args.theme == "dark" else "cadence-demo-light")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     raw_dir = OUT_DIR / "raw"
@@ -64,6 +79,13 @@ def main() -> int:
             record_video_size=viewport,
             device_scale_factor=2,
         )
+        # The app reads its theme from localStorage before first paint, so this
+        # has to be in place before any page script runs. Setting it afterwards
+        # would film a dark first frame and then a flip.
+        if args.theme == "light":
+            context.add_init_script(
+                "try{localStorage.setItem('cadence-theme','light')}catch(e){}"
+            )
         page = context.new_page()
 
         page.goto(args.url)
@@ -136,13 +158,13 @@ def main() -> int:
         return 1
     webm = videos[0]
 
-    final_webm = OUT_DIR / "cadence-demo.webm"
+    final_webm = OUT_DIR / f"{name}.webm"
     shutil.move(str(webm), final_webm)
     shutil.rmtree(raw_dir, ignore_errors=True)
 
     outputs = [final_webm]
     if shutil.which("ffmpeg"):
-        mp4 = OUT_DIR / "cadence-demo.mp4"
+        mp4 = OUT_DIR / f"{name}.mp4"
         # H.264 + faststart so it plays inline on X, LinkedIn and Slack.
         subprocess.run(
             [

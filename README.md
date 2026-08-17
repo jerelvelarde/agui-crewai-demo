@@ -121,13 +121,19 @@ make capabilities        # what this install says it supports
 ## Recording it
 
 ```bash
-make record   # both servers must be up
+make record         # both servers must be up
+make record-light   # the same run, filmed in light mode
 ```
 
 Drives the real app in a headless browser and captures 1080p footage to
 `docs/video/` as `.webm` plus an H.264 `.mp4` (faststart, so it plays inline on
 X, LinkedIn and Slack). Deliberately **clean footage** — no burned-in captions
 or titles, so it can be narrated or titled in post.
+
+The two cuts write different basenames — `cadence-demo` and
+`cadence-demo-light` — so neither overwrites the other. Light mode is set through
+`localStorage` before the first page script runs, otherwise the recording would
+open on a dark frame and then flip.
 
 It prints a chapter list with timestamps, which is what you want for trimming:
 the crew phase is the long stretch, and the beats either side of it are where the
