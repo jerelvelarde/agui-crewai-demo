@@ -19,6 +19,18 @@
        chat's composer scrim can match its panel exactly. */
     --surface-chat: #080c0e;
 
+    /* Spacing scale — one value per job, so distance carries meaning the way
+       colour does. The frame holds the app off the viewport edge; region
+       separates the columns and the brand bar from the work; card separates
+       siblings stacked in a column; inset is the padding inside a card. A
+       single 10px doing all four jobs is what made the layout read as cramped:
+       nothing was further apart than anything else, so no grouping was legible
+       and every card sat hard against the screen edge. */
+    --space-frame: 22px;
+    --space-region: 16px;
+    --space-card: 12px;
+    --space-inset: 18px;
+
     /* Lines. Dark analogues of the glass idea rather than a copy of it —
        implementation defaults, not verified brand tokens. */
     --border-default: rgba(255, 255, 255, 0.1);
@@ -104,6 +116,11 @@ body {
    composer needs a scrim that matches the panel exactly: messages scroll under
    the input, and a scrim one shade off is the same grey rectangle in miniature.
    --surface-chat is the .glass wash over --surface-main, resolved. */
+/* The chat earns panel chrome only when it shares the screen with the canvas,
+   where the border is what separates two columns. Alone on the surface — idle,
+   or working before the canvas opens — the same border is a box drawn around
+   the conversation, which reads as detached from the app rather than as part
+   of it. */
 .chat-panel {
     background: var(--surface-chat);
     border: 1px solid var(--border-default);
@@ -114,9 +131,8 @@ body {
     background: var(--surface-chat) !important;
 }
 
-/* At idle there is nothing to scroll, so the scrim is just a rectangle around a
-   rounded control. */
-.hero-composer div:has(> div > .copilotKitInput) { background: transparent !important; }
+/* No panel, so no scrim: it would be a rectangle behind a rounded control. */
+.chat-plain div:has(> div > .copilotKitInput) { background: transparent !important; }
 
 /* Mono pill — capability tags in the brand bar and the idle suggestions. Mono is
    the brand's technical-annotation face, so it stays on labels like these and off

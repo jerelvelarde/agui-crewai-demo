@@ -290,7 +290,7 @@ function WorkspaceInner({ agent }: { agent: any }) {
         minWidth: 300,
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        gap: "var(--space-card)",
       }}
     >
       <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
@@ -310,13 +310,26 @@ function WorkspaceInner({ agent }: { agent: any }) {
             minWidth: 0,
             display: "flex",
             flexDirection: "column",
-            gap: 10,
+            gap: "var(--space-card)",
             overflowY: "auto",
             maxHeight: "100%",
+            // This column scrolls, so its own edges need the inset the frame
+            // gives everything else: room for the scrollbar on the right, and a
+            // last card that ends short of the bottom instead of being clipped
+            // flush against it.
+            paddingRight: "var(--space-card)",
+            paddingBottom: "var(--space-frame)",
           }}
         >
           {written ? (
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--space-region)",
+                alignItems: "flex-start",
+                flexWrap: "wrap",
+              }}
+            >
               <div style={{ flex: "1 1 620px", minWidth: 0, maxWidth: 1000 }}>
                 <BriefDoc
                   sections={state.sections ?? []}
@@ -329,7 +342,14 @@ function WorkspaceInner({ agent }: { agent: any }) {
           ) : (
             /* Analysis is in, the brief is not written yet: present the insight
                itself rather than a placeholder for the document. */
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 860 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--space-card)",
+                maxWidth: 860,
+              }}
+            >
               {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
               <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
               <FindingsPanel findings={findings} defaultOpen />
@@ -361,9 +381,10 @@ function WorkspaceInner({ agent }: { agent: any }) {
         {idle ? <Hero /> : null}
 
         <div
-          // No panel chrome at idle: the composer is already a rounded control,
-          // so a card around it just draws a second box.
-          className={idle ? "hero-composer" : "chat-panel"}
+          // Panel chrome only once the canvas is up and the border has a job to
+          // do. On its own — idle, or researching before the canvas opens — a
+          // card around the conversation reads as detached from the app.
+          className={canvasOpen ? "chat-panel" : "chat-plain"}
           style={{
             flex: idle ? "0 0 auto" : 1,
             minHeight: 0,
@@ -407,15 +428,15 @@ export function Workspace() {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        gap: 10,
-        padding: 10,
+        gap: "var(--space-region)",
+        padding: "var(--space-frame)",
       }}
     >
       <BlurCircles />
       {/* The partner lockup stays on screen for the whole run — this is a
           CopilotKit × crewAI demo in every state, not only at the title card. */}
       <BrandBar />
-      <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 10 }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", gap: "var(--space-region)" }}>
         <AgentTaskProvider agent={agent as any}>
           <WorkspaceInner agent={agent} />
         </AgentTaskProvider>

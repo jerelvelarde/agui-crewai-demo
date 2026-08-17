@@ -15,7 +15,7 @@ one of the things 0.3.0 added.
 ```bash
 make install
 cp agent/.env.example agent/.env   # add your OPENAI_API_KEY
-make dev                           # agent :8008, web :3002
+make dev                           # agent :8008, web :3000
 ```
 
 Then ask: **“brief me on Pulsegrid's pricing vs ours”**.

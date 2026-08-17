@@ -197,7 +197,7 @@ export function CrewTimeline({
   const doneCount = crew.filter((c) => c.status === "done").length;
 
   return (
-    <div className="glass" style={{ padding: 14, zIndex: 1, position: "relative" }}>
+    <div className="glass" style={{ padding: "var(--space-inset)", zIndex: 1, position: "relative" }}>
       <SectionTitle title="Crew" trailing={`${doneCount}/${crew.length}`} />
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {crew.map((member) => {
@@ -328,7 +328,7 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
 /** Scores only. The verdict lives in the brief's lede, not repeated here. */
 export function ScorecardPanel({ card }: { card: Scorecard }) {
   return (
-    <div className="glass" style={{ padding: 14, zIndex: 1, position: "relative" }}>
+    <div className="glass" style={{ padding: "var(--space-inset)", zIndex: 1, position: "relative" }}>
       <SectionTitle title="Scorecard" trailing={card.competitor} />
       <div style={{ display: "flex", flexDirection: "column", gap: 7, padding: "0 4px" }}>
         <ScoreRow label="Pricing" value={card.pricing_pressure} />
@@ -360,7 +360,7 @@ export function FindingsPanel({
   if (!findings.length) return null;
 
   return (
-    <div className="glass" style={{ padding: 14, zIndex: 1, position: "relative" }}>
+    <div className="glass" style={{ padding: "var(--space-inset)", zIndex: 1, position: "relative" }}>
       <SectionTitle
         title="Evidence"
         trailing={String(findings.length)}
@@ -446,13 +446,16 @@ export function BriefDoc({
     <div
       className="glass"
       style={{
-        padding: "20px 24px 24px",
+        // The brief is the one reading surface in the app rather than a data
+        // card, so it gets more inset than the scale's default: long-form prose
+        // set hard against a border is the thing that reads as cramped.
+        padding: "26px 30px 30px",
         zIndex: 1,
         position: "relative",
         background: "var(--white-70)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
         <span
           style={{
             fontSize: 11,
