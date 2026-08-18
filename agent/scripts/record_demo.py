@@ -46,6 +46,16 @@ def main() -> int:
         default="dark",
         help="Which theme to film. Dark is the app's default.",
     )
+    # Video capture starts when the browser context is created, which is before
+    # the page has navigated, so every take opens on the browser's own blank
+    # frame. Measured at ~0.2s here; 0.3 clears it with margin and costs only a
+    # slice of the idle screen, which is static anyway.
+    parser.add_argument(
+        "--lead-in",
+        type=float,
+        default=0.3,
+        help="Seconds of blank pre-paint frame to drop from the head. 0 keeps it.",
+    )
     parser.add_argument(
         "--name",
         default=None,
@@ -162,8 +172,24 @@ def main() -> int:
     webm = videos[0]
 
     final_webm = OUT_DIR / f"{name}.webm"
-    shutil.move(str(webm), final_webm)
-    shutil.rmtree(raw_dir, ignore_errors=True)
+    # Both deliverables are encoded from the raw capture, each one generation
+    # deep. Deriving the mp4 from the re-encoded webm instead would put two
+    # lossy passes over text, which is the one thing this footage is made of.
+    seek = ["-ss", str(args.lead_in)] if args.lead_in > 0 else []
+
+    if seek and shutil.which("ffmpeg"):
+        # A stream copy will not do it: seeking snaps back to the keyframe at 0
+        # and the blank frame survives. Re-encoding drops it for real, and VP9
+        # happens to halve the file on the way.
+        subprocess.run(
+            ["ffmpeg", "-y", *seek, "-i", str(webm),
+             "-c:v", "libvpx-vp9", "-crf", "34", "-b:v", "0",
+             "-row-mt", "1", "-cpu-used", "5", "-an", str(final_webm)],
+            check=True,
+            capture_output=True,
+        )
+    else:
+        shutil.copy2(str(webm), final_webm)
 
     outputs = [final_webm]
     if shutil.which("ffmpeg"):
@@ -171,7 +197,7 @@ def main() -> int:
         # H.264 + faststart so it plays inline on X, LinkedIn and Slack.
         subprocess.run(
             [
-                "ffmpeg", "-y", "-i", str(final_webm),
+                "ffmpeg", "-y", *seek, "-i", str(webm),
                 # Playwright pads rather than upscales when record_video_size is
                 # larger than the viewport, so the scale to delivery size happens
                 # here. lanczos because this is text, not photography.
@@ -184,6 +210,8 @@ def main() -> int:
             capture_output=True,
         )
         outputs.append(mp4)
+
+    shutil.rmtree(raw_dir, ignore_errors=True)
 
     print("\nChapters:")
     for elapsed, label in chapters:

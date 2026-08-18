@@ -13,23 +13,25 @@ one of the things 0.3.0 added.
 
 ## The demo
 
-A single unedited run — 76 seconds, no captions, nothing sped up. The long
+A single unedited run — 75 seconds, no captions, nothing sped up. The long
 stretch in the middle is the crew actually working.
 
-[![Watch the demo](docs/images/demo-poster.jpg)](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/cadence-demo.mp4)
+[![Watch the demo](docs/images/demo-poster.jpg)](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/agui-crewai-demo-light.mp4)
 
-*The frame above is the moment the run pauses — click it to play.* Also available as
-[`.webm`](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/cadence-demo.webm),
-both attached to the [`demo-footage`](https://github.com/jerelvelarde/agui-crewai-demo/releases/tag/demo-footage) release.
+*The frame above is the moment the run pauses — click it to play.* Also as
+[`.webm`](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/agui-crewai-demo-light.webm),
+and in dark: [`.mp4`](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/agui-crewai-demo.mp4) ·
+[`.webm`](https://github.com/jerelvelarde/agui-crewai-demo/releases/download/demo-footage/agui-crewai-demo.webm).
+All four are on the [`demo-footage`](https://github.com/jerelvelarde/agui-crewai-demo/releases/tag/demo-footage) release.
 
 | | |
 |---|---|
 | `00:06` | Prompt submitted |
-| `00:11` | Reasoning stream, before any tool runs |
-| `00:13` | Researcher tasked — tool calls stream into the chat |
-| `00:28` | Analyst scoring — MCP tool calls attributed on the crew panel |
-| `00:31` | **Run pauses** — approval required |
-| `00:38` | Approved — run resumes |
+| `00:10` | Reasoning stream, before any tool runs |
+| `00:11` | Researcher tasked — tool calls stream into the chat |
+| `00:25` | Analyst scoring — MCP tool calls attributed on the crew panel |
+| `00:27` | **Run pauses** — approval required |
+| `00:35` | Approved — Illustrator draws, then the brief fills in |
 | `01:03` | Brief written, 5/5 sections |
 
 ## Run it
