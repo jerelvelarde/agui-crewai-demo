@@ -168,7 +168,16 @@ export function AgentTaskProvider({
         bump();
       },
       onRunStartedEvent: () => {
-        // Fresh run: drop everything so a second brief does not inherit groups.
+        // A resume is also a run, so this cannot clear on every RUN_STARTED.
+        // Answering a gate would wipe the attribution collected before it —
+        // and once a gate ran *before* the research, it wiped the tool calls
+        // and the MCP badge before they could ever be seen.
+        //
+        // A run that begins while the flow is parked at a human gate is a
+        // continuation of this brief. Anything else is a new one.
+        const stage = (agent as unknown as { state?: { stage?: string } })?.state?.stage;
+        if (stage === "awaiting_plan" || stage === "awaiting_approval") return;
+
         calls.current.clear();
         groups.current.clear();
         callGroup.current.clear();
