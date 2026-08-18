@@ -11,15 +11,7 @@ from typing import Any, Literal, Optional
 from ag_ui_crewai import CopilotKitState
 from pydantic import BaseModel, ConfigDict, Field
 
-Stage = Literal[
-    "idle",
-    "intake",
-    "awaiting_plan",
-    "research",
-    "awaiting_approval",
-    "writing",
-    "done",
-]
+Stage = Literal["idle", "intake", "research", "awaiting_approval", "writing", "done"]
 
 
 class Finding(BaseModel):
@@ -37,25 +29,6 @@ class Section(BaseModel):
     title: str
     status: Literal["pending", "writing", "done"] = "pending"
     body: str = ""
-
-
-class PlanItem(BaseModel):
-    """One thing the crew intends to read before it reads it."""
-
-    label: str
-    detail: str = ""
-    # "mcp" items leave the corpus for the stdio server, which is exactly the
-    # boundary worth showing someone before they approve the run.
-    via: Literal["corpus", "mcp"] = "corpus"
-
-
-class ResearchPlan(BaseModel):
-    """What the crew is about to do, shown before it spends 20 seconds doing it."""
-
-    target: str
-    axis: str
-    items: list[PlanItem] = Field(default_factory=list)
-    note: str = ""
 
 
 class AgentActivity(BaseModel):
@@ -135,8 +108,6 @@ class BriefState(CopilotKitState):
     sections: list[Section] = Field(default_factory=list)
     scorecard: Optional[Scorecard] = None
     visual: Optional[BriefVisual] = None
-    plan: Optional[ResearchPlan] = None
-    plan_decision: Optional[str] = None
 
     # Set when the outline pause is answered, so the UI can show what happened.
     outline_decision: Optional[str] = None

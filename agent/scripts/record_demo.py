@@ -116,18 +116,6 @@ def main() -> int:
         beat("Prompt submitted")
         box.press("Enter")
 
-        # First gate: the research plan, before the crew spends anything. This
-        # blocks the run, so the recorder has to clear it or nothing else
-        # happens — waiting on the outline card alone would hang here forever.
-        try:
-            page.locator("text=Research plan").first.wait_for(state="visible", timeout=120000)
-            beat("Run pauses — research plan, before any work")
-            page.wait_for_timeout(5000)
-            page.locator("button", has_text="Approve").first.click()
-            beat("Plan approved — crew starts")
-        except Exception:
-            print("  (no plan gate seen — continuing)", flush=True)
-
         # Reasoning shows up first, before any tool runs.
         try:
             page.locator("text=/Thought for/").first.wait_for(state="visible", timeout=90000)
@@ -149,7 +137,7 @@ def main() -> int:
             print("  (crew tally not seen — continuing)", flush=True)
 
         page.locator("text=Approval required").first.wait_for(state="visible", timeout=420000)
-        beat("Run pauses again — outline approval")
+        beat("Run paused — approval required")
         # Hold long enough to read the outline and the scorecard.
         page.wait_for_timeout(7000)
 

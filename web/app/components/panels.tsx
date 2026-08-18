@@ -71,7 +71,6 @@ export function SectionTitle({
 
 const STEPS: { stage: Stage; label: string }[] = [
   { stage: "intake", label: "Intake" },
-  { stage: "awaiting_plan", label: "Plan" },
   { stage: "research", label: "Research" },
   { stage: "awaiting_approval", label: "Approval" },
   { stage: "writing", label: "Writing" },
@@ -81,7 +80,6 @@ const STEPS: { stage: Stage; label: string }[] = [
 const STAGE_LABEL: Record<Stage, string> = {
   idle: "Idle",
   intake: "Understanding the ask",
-  awaiting_plan: "Waiting on you",
   research: "Crew researching",
   awaiting_approval: "Waiting on you",
   writing: "Writing the brief",

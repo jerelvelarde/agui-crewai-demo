@@ -152,7 +152,6 @@ def build_research_crew() -> Crew:
     gather = Task(
         description=(
             "Research {target} on the axis of {axis}.\n"
-            "{scope_note}"
             "1. Call our_positioning first to establish our baseline.\n"
             "2. Call get_pricing and get_reviews for {target}.\n"
             "3. Use search_sources and fetch_page for any page that would sharpen "
