@@ -6,6 +6,7 @@ import {
   useAgent,
   useCopilotKit,
   useDefaultRenderTool,
+  useHumanInTheLoop,
   useInterrupt,
   UseAgentUpdate,
 } from "@copilotkit/react-core/v2";
@@ -203,6 +204,155 @@ function ApprovalCard({
   );
 }
 
+/** The research plan gate.
+ *
+ * Reads the plan off shared state rather than tool arguments: the backend has
+ * already emitted it, so the card stays rich without shipping a payload twice,
+ * and the MCP row can be flagged properly instead of as text in a string.
+ */
+function PlanGateCard({
+  done,
+  onApprove,
+  onRevise,
+}: {
+  done: boolean;
+  onApprove: () => void;
+  onRevise: (note: string) => void;
+}) {
+  const { agent } = useAgent({ agentId: "brief", updates: [UseAgentUpdate.OnStateChanged] });
+  const plan = ((agent?.state ?? {}) as BriefState).plan;
+  const [note, setNote] = useState("");
+  const [sent, setSent] = useState(false);
+
+  if (!plan) return null;
+
+  const answered = done || sent;
+  const send = (fn: () => void) => {
+    if (answered) return;
+    setSent(true);
+    fn();
+  };
+
+  return (
+    <div
+      style={{
+        padding: "16px 18px",
+        margin: "6px 0",
+        borderRadius: 10,
+        background: "var(--surface-container)",
+        border: `1px solid ${answered ? "var(--border-default)" : "var(--agent)"}`,
+        opacity: answered ? 0.75 : 1,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span
+          style={{
+            fontSize: 11,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            fontWeight: 600,
+          }}
+        >
+          Research plan
+        </span>
+        <div style={{ flex: 1, height: 1, background: "var(--border-container)" }} />
+        <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
+          {answered ? "answered" : "before any work"}
+        </span>
+      </div>
+
+      <p style={{ fontSize: 16, lineHeight: "26px", margin: "0 0 14px", maxWidth: "56ch" }}>
+        Here is what I am about to read on {plan.target}. Approve it, or tell me what to change.
+      </p>
+
+      <ol style={{ margin: "0 0 16px", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7 }}>
+        {(plan.items ?? []).map((item, index) => (
+          <li key={`${item.label}-${index}`} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+            <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)", flexShrink: 0 }}>
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <span style={{ fontSize: 15 }}>
+              {item.label}
+              {item.detail ? (
+                <span style={{ color: "var(--text-secondary)" }}> — {item.detail}</span>
+              ) : null}
+            </span>
+            {item.via === "mcp" ? (
+              <span
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  padding: "1px 5px",
+                  borderRadius: 4,
+                  border: "1px solid var(--border-default)",
+                  color: "var(--text-secondary)",
+                  flexShrink: 0,
+                }}
+              >
+                MCP
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+
+      {answered ? null : (
+        <>
+          <input
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Optional — what should change?"
+            style={{
+              width: "100%",
+              padding: "9px 11px",
+              marginBottom: 10,
+              borderRadius: 8,
+              border: "1px solid var(--border-container)",
+              background: "transparent",
+              color: "var(--text-primary)",
+              font: "inherit",
+              fontSize: 14,
+            }}
+          />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => send(onApprove)}
+              style={{
+                flex: 1,
+                padding: "9px 14px",
+                borderRadius: 8,
+                border: "none",
+                background: "var(--text-primary)",
+                color: "var(--text-invert)",
+                font: "inherit",
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => send(() => onRevise(note))}
+              style={{
+                flex: 1,
+                padding: "9px 14px",
+                borderRadius: 8,
+                border: "1px solid var(--border-container)",
+                background: "transparent",
+                color: "var(--text-primary)",
+                font: "inherit",
+                cursor: "pointer",
+              }}
+            >
+              Change scope
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Reads its own state so the tool renderer below can stay a stable closure —
  *  re-registering the renderer on every state change would remount the cards. */
 function InlinePipeline() {
@@ -258,6 +408,27 @@ function WorkspaceInner({ agent }: { agent: any }) {
   // Human-in-the-loop belongs in the conversation. The pause is the agent asking
   // the user a question, so it renders in the transcript where the question was
   // asked — not as a separate panel the user has to look away to find.
+  // The plan gate is a frontend tool rather than a flow interrupt, on purpose:
+  // a crewai resume emits no STEP_STARTED or TOOL_CALL_START, so gating with an
+  // interrupt in front of the research silently cost the tool counts, the MCP
+  // badge and the in-chat task cards. Answering a tool starts a fresh run
+  // instead, where attribution streams normally.
+  useHumanInTheLoop({
+    name: "approve_research_plan",
+    description: "Show the reviewer the research plan and wait for a decision.",
+    // No parameters: the card reads the plan off shared state, which the
+    // backend has already emitted.
+    render: ({ status, respond }: any) => (
+      <PlanGateCard
+        done={status === "complete"}
+        onApprove={() => respond?.("approved")}
+        onRevise={(note: string) =>
+          respond?.(note.trim() ? `revise: ${note.trim()}` : "revise")
+        }
+      />
+    ),
+  });
+
   useInterrupt({
     render: ({ interrupt, resolve }: any) => (
       <ApprovalCard interrupt={interrupt} resolve={resolve} />

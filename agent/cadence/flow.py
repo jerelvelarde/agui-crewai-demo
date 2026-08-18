@@ -33,7 +33,7 @@ from ag_ui_crewai import (
     plan_a2ui_injection,
     responses_channel_available,
 )
-from crewai.flow.flow import Flow, listen, start
+from crewai.flow.flow import Flow, listen, router, start
 from crewai.flow.human_feedback import human_feedback
 from litellm import acompletion
 
@@ -44,6 +44,8 @@ from .parsing import match_section, parse_findings, parse_outline, parse_scoreca
 from .state import AgentActivity, BriefState, PlanItem, ResearchPlan, Section
 
 _LOGGER = logging.getLogger(__name__)
+
+PLAN_TOOL_NAME = "approve_research_plan"
 
 SET_TARGET_TOOL = {
     "type": "function",
@@ -307,16 +309,20 @@ class BriefFlow(Flow[BriefState]):
             return record["slug"], "pricing"
         return None, "pricing"
 
-    @listen(intake)
-    async def propose_plan(self) -> str:
-        """Say what the crew intends to read, before it spends twenty seconds.
+    @router(intake, emit=["plan_gate", "plan_ready"])
+    async def plan_router(self) -> str:
+        """Gate the run on a research plan, before the crew spends anything.
 
-        Built from the corpus rather than written by a model: the crew's tools
-        are fixed, so the plan is knowable up front and there is nothing here for
-        an LLM to get wrong or to be slow about.
+        Deliberately NOT a crewai interrupt. An interrupt resumes the flow via
+        ``Flow.from_pending`` + ``resume_async``, and the bridge emits no
+        STEP_STARTED or TOOL_CALL_START on a resumed run — measured, not assumed:
+        with the gate in front of the research, the client received only
+        RUN_STARTED, so the per-agent tool counts, the MCP badge and the in-chat
+        task cards all vanished. Routing through a frontend tool instead means
+        the answer arrives on a fresh run, where attribution streams normally.
         """
         if not self.state.target:
-            return "no_target"
+            return "plan_ready"
 
         record = corpus.resolve(self.state.target)
         name = record["name"] if record else self.state.target
@@ -335,37 +341,101 @@ class BriefFlow(Flow[BriefState]):
                     via="mcp",
                 )
             )
-
         self.state.plan = ResearchPlan(target=name, axis=self.state.axis, items=items)
-        self.state.stage = "awaiting_plan"
+
+        answer = self._plan_answer()
+        if answer is None:
+            self.state.stage = "awaiting_plan"
+            await copilotkit_emit_state(self.state)
+            return "plan_gate"
+
+        self.state.plan_decision = answer
+        if answer.lower().startswith("revise"):
+            self.state.plan.note = answer.split(":", 1)[-1].strip()
         await copilotkit_emit_state(self.state)
-        return "plan"
+        return "plan_ready"
 
-    @listen(propose_plan)
-    @human_feedback(
-        message="Here is what I am about to read. Approve it, or tell me what to change.",
-        emit=["plan_approved", "plan_revise"],
-        # Same reasoning as approve_outline: a dismissed card must not read as a
-        # silent yes.
-        default_outcome="plan_revise",
-        provider=agui_feedback_provider,
-    )
-    def approve_plan(self) -> str:
-        """Pause before the crew runs. Sync, per the @human_feedback contract."""
-        plan = self.state.plan
-        if plan is None:
-            return "No plan."
-        lines = "\n".join(
-            f"{i + 1}. {item.label}"
-            + (f" — {item.detail}" if item.detail else "")
-            + (" [MCP]" if item.via == "mcp" else "")
-            for i, item in enumerate(plan.items)
+    def _plan_answer(self) -> str | None:
+        """The reviewer's answer to the plan tool, if this turn carries one.
+
+        Matches the tool result back to its call id rather than trusting order:
+        the history also carries set_brief_target and any A2UI calls.
+        """
+        wanted: set[str] = set()
+        for message in self.state.messages:
+            calls = (
+                message.get("tool_calls") if isinstance(message, dict)
+                else getattr(message, "tool_calls", None)
+            ) or []
+            for call in calls:
+                fn = call.get("function") if isinstance(call, dict) else getattr(call, "function", None)
+                nm = fn.get("name") if isinstance(fn, dict) else getattr(fn, "name", None)
+                if nm == PLAN_TOOL_NAME:
+                    cid = call.get("id") if isinstance(call, dict) else getattr(call, "id", None)
+                    if cid:
+                        wanted.add(str(cid))
+        if not wanted:
+            return None
+        for message in self.state.messages:
+            role = message.get("role") if isinstance(message, dict) else getattr(message, "role", None)
+            if role != "tool":
+                continue
+            cid = (
+                message.get("tool_call_id") if isinstance(message, dict)
+                else getattr(message, "tool_call_id", None)
+            )
+            if str(cid) in wanted:
+                content = (
+                    message.get("content") if isinstance(message, dict)
+                    else getattr(message, "content", "")
+                )
+                return str(content or "approved")
+        return None
+
+    @listen("plan_gate")
+    async def ask_for_plan_approval(self) -> str:
+        """Emit the plan tool call and let the run end there.
+
+        The frontend renders it, the reviewer answers, and CopilotKit sends the
+        result on a new request — a fresh flow execution rather than a resume.
+        """
+        actions = self.state.copilotkit.actions or []
+        tool = next(
+            (
+                a for a in actions
+                if (a.get("function", {}) if isinstance(a, dict) else {}).get("name") == PLAN_TOOL_NAME
+                or (a.get("name") if isinstance(a, dict) else None) == PLAN_TOOL_NAME
+            ),
+            None,
         )
-        return f"Research plan for the {plan.target} brief ({plan.axis}):\n{lines}"
+        if tool is None:
+            # The UI did not register the gate. Better to run the brief than to
+            # strand it behind a card that can never appear.
+            _LOGGER.warning("%s not registered by the client; skipping the gate", PLAN_TOOL_NAME)
+            return "ungated"
 
-    @listen("plan_approved")
+        await self._complete(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        f"Call {PLAN_TOOL_NAME} now, with no arguments, to show the "
+                        "reviewer the research plan. Do not write any prose."
+                    ),
+                },
+                *self.state.messages,
+            ],
+            tools=[tool],
+        )
+        return "asked"
+
+    @listen("plan_ready")
     async def research(self) -> str:
-        """Run the research crew. Two agents, corpus tools, attributed per agent."""
+        """Run the research crew. Two agents, corpus tools, attributed per agent.
+
+        The plan router has already recorded the reviewer's decision, so this
+        just reads the note off state when narrowing the scope.
+        """
         if not self.state.target:
             return "no_target"
 
@@ -487,18 +557,6 @@ class BriefFlow(Flow[BriefState]):
         """
         lines = "\n".join(f"{i + 1}. {title}" for i, title in enumerate(self.state.outline))
         return f"Proposed outline for the {self.state.target} brief:\n{lines}"
-
-    # Handler name differs from its trigger: crewai rejects a listener named
-    # after the outcome it listens to.
-    @listen("plan_revise")
-    async def rescope_and_research(self) -> str:
-        """Narrow the scope, then run the same research step."""
-        feedback = getattr(self.human_feedback, "feedback", "") or ""
-        self.state.plan_decision = f"revise: {feedback}" if feedback else "revise"
-        if self.state.plan is not None:
-            self.state.plan.note = feedback
-        await copilotkit_emit_state(self.state)
-        return await self.research()
 
     @listen("approved")
     async def write(self) -> str:
