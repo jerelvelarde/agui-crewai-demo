@@ -295,7 +295,9 @@ function WorkspaceInner({ agent }: { agent: any }) {
     >
       <CrewTimeline crew={state.crew ?? []} toolsFor={tasks?.toolsFor} />
       {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
-      <FindingsPanel findings={findings} defaultOpen={false} />
+      {/* Open by default. The evidence is the thing that makes the brief
+          checkable, so hiding it behind a chevron buries the proof. */}
+      <FindingsPanel findings={findings} defaultOpen />
     </div>
   );
 
