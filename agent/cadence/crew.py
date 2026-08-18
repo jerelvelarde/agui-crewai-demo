@@ -94,6 +94,56 @@ def _writer() -> Agent:
     )
 
 
+def _illustrator() -> Agent:
+    return Agent(
+        role="Illustrator",
+        goal=(
+            "Choose the one comparison that makes the {target} brief land, and "
+            "frame it in a sentence."
+        ),
+        backstory=(
+            "You decide what a reader should look at first. You pick from a fixed "
+            "set of charts and write the line that tells them what they are "
+            "seeing. You never state a figure yourself: the numbers are drawn "
+            "from the corpus and printed beside your words, so a figure you "
+            "invented would sit next to the real one and contradict it."
+        ),
+        llm=MODEL,
+        verbose=True,
+        allow_delegation=False,
+    )
+
+
+def build_visual_crew() -> Crew:
+    """Crew that picks and frames the brief's hero comparison.
+
+    It returns a choice and a sentence, never data. ``visuals.py`` builds every
+    plotted value from the corpus.
+    """
+    illustrator = _illustrator()
+
+    choose = Task(
+        description=(
+            "Pick the single chart to show at the top of the brief on {target} "
+            "(axis: {axis}).\n\n"
+            "Available charts:\n{kinds}\n\n"
+            "The Analyst's read:\n{analysis}\n\n"
+            "The approved outline:\n{outline}\n\n"
+            "Return STRICT JSON, no prose and no code fence:\n"
+            '{{"kind": "<one of the chart names above>", '
+            '"title": "<max 8 words naming the comparison>", '
+            '"takeaway": "<one sentence, max 25 words, on what the reader should '
+            'conclude>"}}\n\n'
+            "Do NOT put any number, price or figure in the title or takeaway. "
+            "The chart prints the real ones next to your text."
+        ),
+        expected_output='Strict JSON with keys kind, title, takeaway. No figures in the text.',
+        agent=illustrator,
+    )
+
+    return Crew(agents=[illustrator], tasks=[choose], process=Process.sequential, verbose=True)
+
+
 def build_research_crew() -> Crew:
     """Crew for the research + analysis phase, before the approval pause."""
     researcher = _researcher()

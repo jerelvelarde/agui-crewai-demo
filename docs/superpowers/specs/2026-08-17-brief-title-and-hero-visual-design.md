@@ -1,6 +1,6 @@
 # Brief title block and an Illustrator-chosen hero visual
 
-Status: proposed
+Status: implemented 2026-08-17
 Date: 2026-08-17
 
 ## Goal

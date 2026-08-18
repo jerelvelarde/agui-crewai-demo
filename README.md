@@ -2,9 +2,10 @@
 
 A competitive-intelligence brief workspace built on [`ag-ui-crewai` 0.3.0](https://pypi.org/project/ag-ui-crewai/).
 
-Ask for a brief on a competitor. A three-agent CrewAI crew researches it, an
-analyst scores it, **the run pauses for your approval**, then a writer fills the
-brief in section by section — all streaming over AG-UI into a CopilotKit UI.
+Ask for a brief on a competitor. A four-agent CrewAI crew researches it, an
+analyst scores it, **the run pauses for your approval**, then an illustrator
+draws the comparison and a writer fills the brief in section by section — all
+streaming over AG-UI into a CopilotKit UI.
 
 The point of the demo is that none of those capabilities are bolted on to show
 them off. Each one is there because the product needs it, and each happens to be
@@ -47,10 +48,11 @@ Then ask: **“brief me on Pulsegrid's pricing vs ours”**.
 |---|---|---|
 | Model thinks before acting | reasoning stream | `flow.py::intake` |
 | Competitor name appears before the call finishes | predictive state | `copilotkit_predict_state` |
-| Researcher → Analyst → Writer, each attributed | crew-inside-flow attribution | `crew.py` |
+| Researcher → Analyst → Illustrator → Writer, each attributed | crew-inside-flow attribution | `crew.py` |
 | Corpus tools run server-side, results render | backend tool rendering | `tools.py` |
 | Scorecard as a rich component | generative UI / A2UI | `flow.py::present` |
 | Run genuinely pauses, then resumes | interrupt / resume | `flow.py::approve_outline` |
+| Brief opens with a chart the agent chose | agent-directed, data-backed generative UI | `visuals.py` |
 | Brief fills in section by section | shared-state streaming | `flow.py::_write_sections` |
 | Analyst checks shipping velocity over MCP | MCP tool visibility | `mcp_server.py` |
 | Attach a pricing screenshot to the ask | multimodal input | `make verify-multimodal` |
@@ -150,7 +152,13 @@ image is a solid colour. For that, drop a real pricing screenshot into the chat.
 
 `agent/corpus/` holds committed competitor data — pricing pages, docs, reviews,
 changelogs — and every tool reads only from there. No network research, so runs
-are byte-identical and recordings are repeatable. `OPENAI_API_KEY` is the only
+are byte-identical and recordings are repeatable.
+
+The hero chart holds that line under a fourth agent. The Illustrator chooses
+which comparison to draw and writes the sentence framing it; every plotted
+figure is built from the corpus by `visuals.py`. So the prose varies run to run
+and the chart does not, and a figure can never contradict the real one printed
+beside it. `OPENAI_API_KEY` is the only
 secret.
 
 Competitors are fictional: **Beacon Analytics** (enterprise-first),
@@ -188,7 +196,8 @@ agent/    Python 3.12 · uv · FastAPI · ag-ui-crewai · crewai
   cadence/
     flow.py            the brief pipeline
     conversational.py  Conversational Flows endpoint
-    crew.py            Researcher → Analyst → Writer
+    crew.py            Researcher → Analyst → Illustrator → Writer
+    visuals.py         corpus → chart data (the agent never supplies a figure)
     tools.py           corpus-backed backend tools
     parsing.py         crew text → typed state (unit-tested)
     state.py           BriefState

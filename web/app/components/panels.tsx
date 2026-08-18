@@ -4,7 +4,14 @@ import Image from "next/image";
 
 import { ThemeToggle } from "./theme-toggle";
 import { useState } from "react";
-import type { AgentActivity, Finding, Scorecard, Section, Stage } from "../lib/types";
+import type {
+  AgentActivity,
+  BriefVisual,
+  Finding,
+  Scorecard,
+  Section,
+  Stage,
+} from "../lib/types";
 
 export function SectionTitle({
   title,
@@ -426,14 +433,127 @@ function CopyButton({ text }: { text: string }) {
 
 /** The deliverable. Prose is measure-constrained — full-width lines at 1080p+
  *  are close to unreadable, which is the main thing wrong with a naive layout. */
+/** The hero comparison under the brief title.
+ *
+ * Every figure here was built server-side from the corpus; this only draws
+ * what it is given. Points with no numeric value are real states — a sales-only
+ * tier, or a capability no plan offers — so they render as a dashed slot
+ * carrying their own label rather than as a bar of length zero, which would
+ * read as "free".
+ *
+ * Threat colours are deliberately not reused: red/orange/mint mean threat level
+ * on the scorecard, and this is not a threat readout.
+ */
+function HeroVisual({ visual }: { visual: BriefVisual }) {
+  const points = visual.points ?? [];
+  if (points.length < 2) return null;
+
+  const max = Math.max(...points.map((p) => p.value ?? 0), 1);
+
+  return (
+    <figure
+      style={{
+        margin: "0 0 24px",
+        padding: "var(--space-inset)",
+        border: "1px solid var(--border-container)",
+        borderRadius: 10,
+        background: "var(--surface-main)",
+      }}
+    >
+      <figcaption style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>{visual.title}</div>
+        {visual.takeaway ? (
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>
+            {visual.takeaway}
+          </div>
+        ) : null}
+      </figcaption>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        {points.map((point, index) => {
+          const numeric = typeof point.value === "number";
+          const width = numeric ? Math.max(((point.value as number) / max) * 100, 1.5) : 0;
+          return (
+            <div
+              key={`${point.label}-${index}`}
+              style={{ display: "flex", alignItems: "center", gap: 10 }}
+              title={point.note || undefined}
+            >
+              <span
+                style={{
+                  width: 170,
+                  flexShrink: 0,
+                  fontSize: 12,
+                  color: point.ours ? "var(--text-primary)" : "var(--text-secondary)",
+                  fontWeight: point.ours ? 600 : 400,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {point.label}
+              </span>
+
+              <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
+                {numeric ? (
+                  <span
+                    style={{
+                      height: 8,
+                      width: `${width}%`,
+                      borderRadius: 9999,
+                      background: point.ours ? "var(--agent)" : "var(--text-disabled)",
+                    }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      height: 8,
+                      width: 64,
+                      borderRadius: 9999,
+                      border: "1px dashed var(--border-default)",
+                    }}
+                  />
+                )}
+              </span>
+
+              <span
+                className="mono"
+                style={{
+                  fontSize: 11,
+                  flexShrink: 0,
+                  textAlign: "right",
+                  minWidth: 76,
+                  color: numeric ? "var(--text-primary)" : "var(--text-disabled)",
+                }}
+              >
+                {point.display}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {visual.caption ? (
+        <div style={{ fontSize: 11, color: "var(--text-disabled)", marginTop: 12 }}>
+          {visual.caption}
+        </div>
+      ) : null}
+    </figure>
+  );
+}
+
 export function BriefDoc({
   sections,
   target,
   verdict,
+  axis,
+  visual,
 }: {
   sections: Section[];
   target?: string | null;
   verdict?: string;
+  axis?: string;
+  visual?: BriefVisual | null;
 }) {
   if (!sections.length) return null;
 
@@ -457,22 +577,56 @@ export function BriefDoc({
         background: "var(--white-70)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-        <span
+      {/* A title block, not a label. The document names its own subject: the
+          old BRIEF eyebrow left the reader to infer it from the prose. */}
+      <div style={{ marginBottom: 22 }}>
+        <div
+          className="mono"
           style={{
             fontSize: 11,
             textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            color: "var(--text-secondary)",
+            letterSpacing: "0.08em",
+            color: "var(--text-disabled)",
           }}
         >
-          Brief
-        </span>
-        <div style={{ flex: 1, height: 1, background: "var(--border-container)" }} />
-        <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
-          {done}/{sections.length} sections
-        </span>
-        {done === sections.length ? <CopyButton text={markdown} /> : null}
+          Competitive brief
+        </div>
+        <h1
+          style={{
+            fontSize: 34,
+            lineHeight: 1.15,
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
+            margin: "6px 0 0",
+          }}
+        >
+          {target ?? "Competitor"}
+        </h1>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginTop: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>
+            {axis ?? "pricing"} vs Northstar
+          </span>
+          <span aria-hidden style={{ color: "var(--text-disabled)" }}>
+            ·
+          </span>
+          <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
+            {done}/{sections.length} sections
+          </span>
+          <span style={{ marginLeft: "auto" }}>
+            {done === sections.length ? <CopyButton text={markdown} /> : null}
+          </span>
+        </div>
+        <div
+          style={{ height: 1, background: "var(--border-container)", marginTop: 16 }}
+        />
       </div>
 
       <div style={{ maxWidth: "68ch" }}>
@@ -490,6 +644,8 @@ export function BriefDoc({
             {verdict}
           </p>
         ) : null}
+
+        {visual ? <HeroVisual visual={visual} /> : null}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           {sections.map((section, index) => (
@@ -557,7 +713,7 @@ export const DEMO_PROMPTS = [
  */
 export function BrandBar() {
   const pills = [
-    { label: "crew · 3 agents", color: "var(--mint)" },
+    { label: "crew · 4 agents", color: "var(--mint)" },
     { label: "hitl · interrupt/resume", color: "var(--agent)" },
     { label: "mcp + generative ui", color: "var(--orange)" },
   ];

@@ -306,7 +306,12 @@ function WorkspaceInner({ agent }: { agent: any }) {
       {canvasOpen ? (
         <div
           style={{
-            flex: 1,
+            // Greedy only once the brief is here and there is a document plus a
+            // rail to spend the width on. Before that the content is capped for
+            // reading, so a flex:1 column stretched to fill and stranded the
+            // difference as dead space between the panels and the chat. Sizing
+            // to the cap instead lets the row centre the two columns as a pair.
+            flex: written ? 1 : "0 1 860px",
             minWidth: 0,
             display: "flex",
             flexDirection: "column",
@@ -335,6 +340,8 @@ function WorkspaceInner({ agent }: { agent: any }) {
                   sections={state.sections ?? []}
                   target={state.target}
                   verdict={verdict}
+                  axis={state.axis}
+                  visual={state.visual}
                 />
               </div>
               {rail}
@@ -347,7 +354,6 @@ function WorkspaceInner({ agent }: { agent: any }) {
                 display: "flex",
                 flexDirection: "column",
                 gap: "var(--space-card)",
-                maxWidth: 860,
               }}
             >
               {state.scorecard ? <ScorecardPanel card={state.scorecard} /> : null}
@@ -436,7 +442,18 @@ export function Workspace() {
       {/* The partner lockup stays on screen for the whole run — this is a
           CopilotKit × crewAI demo in every state, not only at the title card. */}
       <BrandBar />
-      <div style={{ flex: 1, minHeight: 0, display: "flex", gap: "var(--space-region)" }}>
+      {/* Centred so any width the columns do not claim is split evenly either
+          side of them, rather than piling up between the canvas and the chat.
+          A no-op once the brief is written and the canvas takes the slack. */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          justifyContent: "center",
+          gap: "var(--space-region)",
+        }}
+      >
         <AgentTaskProvider agent={agent as any}>
           <WorkspaceInner agent={agent} />
         </AgentTaskProvider>

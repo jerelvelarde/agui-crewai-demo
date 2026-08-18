@@ -50,6 +50,39 @@ class Scorecard(BaseModel):
     verdict: str = ""
 
 
+VisualKind = Literal["tier-ladder", "gate-ladder"]
+
+
+class VisualPoint(BaseModel):
+    """One plotted row. Built from the corpus, never from the model.
+
+    ``value`` is optional because a contact-us tier has no monthly price.
+    ``display`` carries the honest string in that case, so the renderer can show
+    it off-scale instead of drawing a bar of length zero.
+    """
+
+    label: str
+    value: Optional[int] = None
+    display: str
+    note: str = ""
+    ours: bool = False
+
+
+class BriefVisual(BaseModel):
+    """The hero comparison under the brief title.
+
+    The Illustrator supplies ``kind``, ``title`` and ``takeaway`` only. ``points``
+    and ``caption`` are built server-side, which is what keeps the figures
+    sourced and the runs repeatable.
+    """
+
+    kind: VisualKind
+    title: str
+    takeaway: str = ""
+    caption: str = ""
+    points: list[VisualPoint] = Field(default_factory=list)
+
+
 class BriefState(CopilotKitState):
     """The brief under construction.
 
@@ -74,6 +107,7 @@ class BriefState(CopilotKitState):
     outline: list[str] = Field(default_factory=list)
     sections: list[Section] = Field(default_factory=list)
     scorecard: Optional[Scorecard] = None
+    visual: Optional[BriefVisual] = None
 
     # Set when the outline pause is answered, so the UI can show what happened.
     outline_decision: Optional[str] = None

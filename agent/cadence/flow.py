@@ -38,7 +38,8 @@ from crewai.flow.human_feedback import human_feedback
 from litellm import acompletion
 
 from . import corpus
-from .crew import MODEL, build_research_crew, build_section_crew
+from . import visuals
+from .crew import MODEL, build_research_crew, build_section_crew, build_visual_crew
 from .parsing import match_section, parse_findings, parse_outline, parse_scorecard, split_sections
 from .state import AgentActivity, BriefState, Section
 
@@ -92,6 +93,7 @@ def _crew_roster() -> list[AgentActivity]:
     return [
         AgentActivity(agent="Researcher", role="Gathers sourced facts", status="idle"),
         AgentActivity(agent="Analyst", role="Scores and outlines", status="idle"),
+        AgentActivity(agent="Illustrator", role="Draws the comparison", status="idle"),
         AgentActivity(agent="Writer", role="Writes the brief", status="idle"),
     ]
 
@@ -440,6 +442,66 @@ class BriefFlow(Flow[BriefState]):
         )
         return await self._write_sections(revision_note=note)
 
+    async def _draw_visual(self) -> None:
+        """Pick and build the hero comparison, before any prose is written.
+
+        Deliberately first: the title block and chart land the moment the run
+        resumes and the sections fill in beneath, rather than a chart arriving
+        after the reader has already finished reading.
+
+        The visual is an enhancement, never a reason to lose a brief — every
+        failure path here leaves ``state.visual`` unset and the brief renders
+        exactly as it did before.
+        """
+        target = self.state.target
+        if not target:
+            return
+
+        await self._mark("Illustrator", "working", "Choosing the comparison")
+        record = corpus.resolve(target)
+        slug = record["slug"] if record else target
+
+        choice: dict[str, Any] = {}
+        try:
+            crew = build_visual_crew()
+            result = await crew.kickoff_async(
+                inputs={
+                    "target": target,
+                    "axis": self.state.axis,
+                    "kinds": "\n".join(
+                        f"- {kind}: {brief}" for kind, brief in visuals.KIND_BRIEFS.items()
+                    ),
+                    "analysis": self._analysis_block(),
+                    "outline": "\n".join(self.state.outline),
+                }
+            )
+            choice = self._parse_visual_choice(str(result))
+        except Exception:  # noqa: BLE001 - the brief matters more than the chart
+            _LOGGER.exception("Illustrator failed; continuing without a visual")
+
+        self.state.visual = visuals.build_visual(
+            choice.get("kind"), choice.get("title"), choice.get("takeaway"), slug
+        )
+
+        if self.state.visual is None:
+            await self._mark("Illustrator", "done", "No comparison to draw")
+        else:
+            await self._mark("Illustrator", "done", f"Drew the {self.state.visual.kind}")
+        await copilotkit_emit_state(self.state)
+
+    @staticmethod
+    def _parse_visual_choice(raw: str) -> dict[str, Any]:
+        """Tolerate a code fence or stray prose around the JSON object."""
+        text = raw.strip()
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end <= start:
+            return {}
+        try:
+            parsed = json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+
     async def _write_sections(self, *, revision_note: str) -> str:
         if not self.state.sections:
             return "nothing_to_write"
@@ -447,6 +509,7 @@ class BriefFlow(Flow[BriefState]):
         if self.state.outline_decision is None:
             self.state.outline_decision = "approved"
         self.state.stage = "writing"
+        await self._draw_visual()
         await self._mark("Writer", "working", "Writing the brief")
 
         crew = build_section_crew()
