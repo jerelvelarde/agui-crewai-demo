@@ -542,6 +542,17 @@ function HeroVisual({ visual }: { visual: BriefVisual }) {
   );
 }
 
+/** The axis is free text the Analyst wrote, so it may already name the
+ *  comparison ("pricing versus ours"). Appending "vs Northstar" unconditionally
+ *  produced "pricing versus ours vs Northstar" in a real run — only add it when
+ *  the axis does not already say who we are measuring against. */
+function subtitleFor(axis?: string): string {
+  const value = (axis ?? "pricing").trim() || "pricing";
+  return /\b(vs|versus|against|ours|northstar)\b/i.test(value)
+    ? value
+    : `${value} vs Northstar`;
+}
+
 export function BriefDoc({
   sections,
   target,
@@ -612,7 +623,7 @@ export function BriefDoc({
           }}
         >
           <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-            {axis ?? "pricing"} vs Northstar
+            {subtitleFor(axis)}
           </span>
           <span aria-hidden style={{ color: "var(--text-disabled)" }}>
             ·

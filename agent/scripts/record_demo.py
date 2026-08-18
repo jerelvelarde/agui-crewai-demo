@@ -8,7 +8,7 @@ It prints a chapter list with timestamps relative to the start of the recording,
 so the dead air while the crew works is easy to find and trim.
 
     python scripts/record_demo.py                    # needs web :3000 + agent :8008
-    python scripts/record_demo.py --theme light      # the light cut, as cadence-demo-light
+    python scripts/record_demo.py --theme light      # the light cut, as agui-crewai-demo-light
     python scripts/record_demo.py --url http://localhost:3100  # override if your port differs
 """
 
@@ -49,12 +49,15 @@ def main() -> int:
     parser.add_argument(
         "--name",
         default=None,
-        help="Output basename. Defaults to cadence-demo, or cadence-demo-light "
+        help="Output basename. Defaults to agui-crewai-demo, or "
+        "agui-crewai-demo-light "
         "for --theme light, so the two cuts never overwrite each other.",
     )
     args = parser.parse_args()
 
-    name = args.name or ("cadence-demo" if args.theme == "dark" else "cadence-demo-light")
+    name = args.name or (
+        "agui-crewai-demo" if args.theme == "dark" else "agui-crewai-demo-light"
+    )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     raw_dir = OUT_DIR / "raw"

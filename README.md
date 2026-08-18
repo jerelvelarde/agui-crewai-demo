@@ -132,8 +132,8 @@ Drives the real app in a headless browser and captures 1080p footage to
 X, LinkedIn and Slack). Deliberately **clean footage** — no burned-in captions
 or titles, so it can be narrated or titled in post.
 
-The two cuts write different basenames — `cadence-demo` and
-`cadence-demo-light` — so neither overwrites the other. Light mode is set through
+The two cuts write different basenames — `agui-crewai-demo` and
+`agui-crewai-demo-light` — so neither overwrites the other. Light mode is set through
 `localStorage` before the first page script runs, otherwise the recording would
 open on a dark frame and then flip.
 

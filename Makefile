@@ -34,7 +34,7 @@ verify-multimodal:
 record:
 	cd agent && .venv/bin/python scripts/record_demo.py
 
-# Same run, filmed in light mode. Writes cadence-demo-light.* so it never
+# Same run, filmed in light mode. Writes agui-crewai-demo-light.* so it never
 # overwrites the dark cut.
 record-light:
 	cd agent && .venv/bin/python scripts/record_demo.py --theme light
