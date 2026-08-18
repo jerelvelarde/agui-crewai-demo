@@ -126,7 +126,7 @@ export function BriefPipelineCard({
 
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontWeight: 600 }}>
-          {target ? `${target} brief` : "Cadence"}
+          {target ? `${target} brief` : "Competitive brief"}
         </span>
         {target ? (
           <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>

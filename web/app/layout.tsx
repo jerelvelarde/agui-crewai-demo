@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cadence — CopilotKit × CrewAI",
+  title: "CopilotKit × CrewAI",
   description:
     "A competitive-intelligence brief workspace built on ag-ui-crewai 0.3.0: reasoning streams, crew attribution, real interrupts, shared state and generative UI.",
 };

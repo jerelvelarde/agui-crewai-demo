@@ -314,7 +314,7 @@ export function AgentTaskCard(call: TaskCall) {
 
   const done = !group.open && calls.every((c) => c.status === "complete");
   const finishedCount = calls.filter((c) => c.status === "complete").length;
-  const who = group.agent ?? "Cadence";
+  const who = group.agent ?? "Crew";
   const usesMcp = calls.some((c) => isMcp(c.name));
 
   // Multiple calls collapse to a summary line once the group is done; a single
