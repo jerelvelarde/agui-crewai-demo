@@ -41,7 +41,7 @@ from . import corpus
 from . import visuals
 from .crew import MODEL, build_research_crew, build_section_crew, build_visual_crew
 from .parsing import match_section, parse_findings, parse_outline, parse_scorecard, split_sections
-from .state import AgentActivity, BriefState, Section
+from .state import AgentActivity, BriefState, PlanItem, ResearchPlan, Section
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -308,6 +308,62 @@ class BriefFlow(Flow[BriefState]):
         return None, "pricing"
 
     @listen(intake)
+    async def propose_plan(self) -> str:
+        """Say what the crew intends to read, before it spends twenty seconds.
+
+        Built from the corpus rather than written by a model: the crew's tools
+        are fixed, so the plan is knowable up front and there is nothing here for
+        an LLM to get wrong or to be slow about.
+        """
+        if not self.state.target:
+            return "no_target"
+
+        record = corpus.resolve(self.state.target)
+        name = record["name"] if record else self.state.target
+        items = [
+            PlanItem(label=f"{name} pricing", detail="structured tiers", via="corpus"),
+            PlanItem(label=f"{name} docs", detail="limits and quickstart", via="corpus"),
+            PlanItem(label=f"{name} reviews", detail="G2 and community sentiment", via="corpus"),
+            PlanItem(label=f"{name} changelog", detail="what they have shipped", via="corpus"),
+            PlanItem(label="Northstar positioning", detail="our own baseline", via="corpus"),
+        ]
+        if not os.getenv("CADENCE_DISABLE_MCP"):
+            items.append(
+                PlanItem(
+                    label="Shipping velocity",
+                    detail="external MCP server, outside the corpus",
+                    via="mcp",
+                )
+            )
+
+        self.state.plan = ResearchPlan(target=name, axis=self.state.axis, items=items)
+        self.state.stage = "awaiting_plan"
+        await copilotkit_emit_state(self.state)
+        return "plan"
+
+    @listen(propose_plan)
+    @human_feedback(
+        message="Here is what I am about to read. Approve it, or tell me what to change.",
+        emit=["plan_approved", "plan_revise"],
+        # Same reasoning as approve_outline: a dismissed card must not read as a
+        # silent yes.
+        default_outcome="plan_revise",
+        provider=agui_feedback_provider,
+    )
+    def approve_plan(self) -> str:
+        """Pause before the crew runs. Sync, per the @human_feedback contract."""
+        plan = self.state.plan
+        if plan is None:
+            return "No plan."
+        lines = "\n".join(
+            f"{i + 1}. {item.label}"
+            + (f" — {item.detail}" if item.detail else "")
+            + (" [MCP]" if item.via == "mcp" else "")
+            for i, item in enumerate(plan.items)
+        )
+        return f"Research plan for the {plan.target} brief ({plan.axis}):\n{lines}"
+
+    @listen("plan_approved")
     async def research(self) -> str:
         """Run the research crew. Two agents, corpus tools, attributed per agent."""
         if not self.state.target:
@@ -316,9 +372,19 @@ class BriefFlow(Flow[BriefState]):
         self.state.stage = "research"
         await self._mark("Researcher", "working", "Gathering sourced facts")
 
+        if self.state.plan_decision is None:
+            self.state.plan_decision = "approved"
+
         crew = build_research_crew()
+        scope = (self.state.plan.note if self.state.plan else "") or ""
         result = await crew.kickoff_async(
-            inputs={"target": self.state.target, "axis": self.state.axis}
+            inputs={
+                "target": self.state.target,
+                "axis": self.state.axis,
+                "scope_note": (
+                    f"The reviewer narrowed the scope — honour it: {scope}\n\n" if scope else ""
+                ),
+            }
         )
 
         outputs = [task.raw for task in (getattr(result, "tasks_output", None) or [])]
@@ -421,6 +487,18 @@ class BriefFlow(Flow[BriefState]):
         """
         lines = "\n".join(f"{i + 1}. {title}" for i, title in enumerate(self.state.outline))
         return f"Proposed outline for the {self.state.target} brief:\n{lines}"
+
+    # Handler name differs from its trigger: crewai rejects a listener named
+    # after the outcome it listens to.
+    @listen("plan_revise")
+    async def rescope_and_research(self) -> str:
+        """Narrow the scope, then run the same research step."""
+        feedback = getattr(self.human_feedback, "feedback", "") or ""
+        self.state.plan_decision = f"revise: {feedback}" if feedback else "revise"
+        if self.state.plan is not None:
+            self.state.plan.note = feedback
+        await copilotkit_emit_state(self.state)
+        return await self.research()
 
     @listen("approved")
     async def write(self) -> str:

@@ -43,6 +43,11 @@ function ApprovalCard({
   const outline: string = interrupt?.metadata?.crewai?.output ?? "";
   const options: string[] = interrupt?.response_schema?.enum ??
     interrupt?.responseSchema?.enum ?? ["approved", "revise"];
+  // Two gates now share this card. The outcome names are the only thing that
+  // distinguishes them, so the heading follows those rather than the stage —
+  // the card must stay correct even if it renders after state has moved on.
+  const isPlan = options.some((o) => o.startsWith("plan"));
+  const heading = isPlan ? "Research plan" : "Approval required";
 
   const send = (value: string) => {
     setSent(true);
@@ -75,7 +80,7 @@ function ApprovalCard({
             fontWeight: 600,
           }}
         >
-          Approval required
+          {heading}
         </span>
         <div style={{ flex: 1, height: 1, background: "var(--border-container)" }} />
         <span className="mono" style={{ fontSize: 11, color: "var(--text-disabled)" }}>
@@ -191,7 +196,7 @@ function ApprovalCard({
             color: "inherit",
           }}
         >
-          Rework outline
+          {isPlan ? "Change scope" : "Rework outline"}
         </button>
       </div>
     </div>

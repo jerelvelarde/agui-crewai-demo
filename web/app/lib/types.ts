@@ -3,10 +3,24 @@
 export type Stage =
   | "idle"
   | "intake"
+  | "awaiting_plan"
   | "research"
   | "awaiting_approval"
   | "writing"
   | "done";
+
+export interface PlanItem {
+  label: string;
+  detail?: string;
+  via?: "corpus" | "mcp";
+}
+
+export interface ResearchPlan {
+  target: string;
+  axis: string;
+  items?: PlanItem[];
+  note?: string;
+}
 
 export interface Finding {
   source: string;
@@ -68,5 +82,7 @@ export interface BriefState {
   sections?: Section[];
   scorecard?: Scorecard | null;
   visual?: BriefVisual | null;
+  plan?: ResearchPlan | null;
+  plan_decision?: string | null;
   outline_decision?: string | null;
 }
